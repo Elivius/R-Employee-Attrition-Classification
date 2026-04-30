@@ -1,7 +1,7 @@
-#Joshua Yeo Jing Hao, TP077315
-#Chin Kai Jack, TP076605
-#Ee Jin Xing, TP076848
-#Lee Hong Yi, TP076604
+# Joshua Yeo Jing Hao, TP077315
+# Chin Kai Jack, TP076605
+# Ee Jin Xing, TP076848
+# Lee Hong Yi, TP076604
 
 #Section 1: Libraries
 #Installation for packages
