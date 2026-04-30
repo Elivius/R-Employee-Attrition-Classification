@@ -1,4 +1,18 @@
-.Rproj.user
+# History files
 .Rhistory
 .RData
 .Ruserdata
+
+# Example: Filter out data files if they are huge
+*.csv
+*.rds
+
+# RStudio files
+.Rproj.user/
+
+# Session data
+.Rapp.history
+
+# renv folders (if using)
+renv/library/
+renv/staging/
