@@ -49,7 +49,7 @@ message("[OK] File Loaded", nrow(df_raw), "rows x", ncol(df_raw), "columns")
 # Section 3: Data Exploration
 cat("\n---  DATASET Overview ---\n")
 cat("Rows    :", nrow(df_raw), "\n")
-cat("Columns :", nrow(df_raw), "\n")
+cat("Columns :", ncol(df_raw), "\n")
 
 cat("\n--- Names & Data Types ---\n")
 str(df_raw)
