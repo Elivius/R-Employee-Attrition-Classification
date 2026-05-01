@@ -144,7 +144,7 @@ Color_No <- "#2196F3"
 Color_Yes <- "#F44336"
 Color_Bar <- "#800080"
 Color_Training <- "#FF9800"
-Color_Green <- "#4CAF50" #No Overtime
+Color_Green <- "#4CAF50" # No Overtime
 
 # Factor Label Sets (defined once, reused everywhere)
 Satisfaction_Scale <- c("Low", "Medium", "High", "Very High")
@@ -157,7 +157,7 @@ FLAG_AND_REMOVE <- TRUE
 
 # Section 5: Data Cleaning & Pre-processing
 
-# 5.1Standardize Column Names
+# 5.1 Standardize Column Names
 df <- df_raw %>%
   clean_names()
 cat("\n[OK] Names are standardized.\n")
