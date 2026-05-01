@@ -21,7 +21,7 @@ message("[OK] All libraries loaded, ready to proceed.")
 
 
 # Section 2: Read Raw File
-raw_file <- "4. dataset_employee_attrition.csv"
+raw_file <- "dataset_employee_attrition.csv"
 
 # Checking file exists before loading
 if(!file.exists(raw_file)){
