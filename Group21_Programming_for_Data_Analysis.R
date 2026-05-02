@@ -21,31 +21,14 @@
 
 
 # =============================================================================
-# SECTION 1: LIBRARIES
-# Must be loaded first — every section below depends on these tools
+# SECTION 1: LIBRARIES (Use pacman - package manager)
+# Handle the "check -> install -> load" workflow in one go
 # =============================================================================
 
-packages <- c(
-  "tidyverse",   # covers dplyr, ggplot2, purrr, forcats, tidyr all at once
-  "tidymodels",  # model building, evaluation, ROC curve
-  "scales",      # percent and comma formatting on plots
-  "gridExtra",   # arrange multiple plots side by side
-  "janitor",     # clean_names() for column names
-  "arrow"        # High-performance columnar storage for advanced retrieval optimization
-)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow)
 
-# Only install packages that are not already on this machine
-new_packages <- packages[!(packages %in% rownames(installed.packages()))]
-if (length(new_packages) > 0) {
-  message(">>> Installing missing packages: ",
-          paste(new_packages, collapse = ", "))
-  install.packages(new_packages, quiet = TRUE)
-}
-
-# Load all packages quietly — invisible() suppresses the loading messages
-invisible(lapply(packages, library, character.only = TRUE))
 message("[OK] All libraries loaded — ready to proceed.")
-
 
 # =============================================================================
 # SECTION 2: ADVANCED DATA RETRIEVAL PIPELINE (Parquet Implementation)
