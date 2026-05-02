@@ -52,10 +52,10 @@ if (!file.exists(raw_file)) {
     "  2. Run setwd('your/folder/path') to point to the right folder\n",
     "  3. Make sure your CSV file is saved in that same folder\n"
   )
-}
-
-if (file.size(raw_file) == 0) {
+} else if (file.size(raw_file) == 0) {
   stop("\n[ERROR] '", raw_file, "' is empty — nothing to load.\n")
+} else {
+  message("\n[OK] Raw File found and contains data.\n")
 }
 
 # Load the raw file
