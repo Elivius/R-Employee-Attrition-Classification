@@ -91,14 +91,14 @@ cat("Columns :", ncol(df_raw), "\n")
 
 # --- Question 2: What is inside? ---
 # str() shows column names AND data types at the same time
-# Watch for: numeric columns showing as "chr" — means dirty values like "1423_"
+# IMPORTANT -> Watch for: numeric columns showing as "chr" — means dirty values like "1423_"
 cat("\n--- Structure (column names + data types) ---\n")
 str(df_raw)
 
 
 # --- Question 3: What does it look like? ---
 # See the actual raw data — most important visual check
-# This is where you spot: "sale", "1423_", "f", "YES" etc.
+# IMPORTANT -> This is where you spot: "sale", "1423_", "f", "YES" etc.
 cat("\n--- Sample Rows (first 10) ---\n")
 print(head(df_raw, 10))
 
@@ -140,7 +140,7 @@ cat("\n--- Attrition Distribution (raw) ---\n")
 print(table(df_raw$Attrition, useNA = "always"))
 
 # 5b. Unique Values in ALL Categorical Columns
-# Auto-detects every text column — no need to hardcode names
+# Auto-detects every text column — no need to hardcode names (As stated in Question 2)
 # Reveals ALL inconsistent formats that need fixing in Section 5
 # sort() puts similar values next to each other — makes duplicates obvious
 cat("\n--- Unique Values in Categorical Columns ---\n")
