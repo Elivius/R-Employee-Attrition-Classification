@@ -61,7 +61,7 @@ if (!file.exists(raw_file)) {
 # Load the raw file
 # stringsAsFactors = FALSE -> keeps text as plain text, not auto-converted
 # na.strings -> tells R which values to treat as missing (NA)
-df_raw_csv <- read.csv(
+df_raw <- read.csv(
   raw_file,
   stringsAsFactors = FALSE,
   na.strings = c("", "NA", "N/A", "na", "n/a",
@@ -69,19 +69,8 @@ df_raw_csv <- read.csv(
                  "null", "NULL", "none", "None")
 )
 
-message("[OK] File loaded — ", nrow(df_raw_csv), " rows x ",
-        ncol(df_raw_csv), " columns")
-
-# We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
-# columnar format that allows for high-speed I/O and better compression.
-parquet_file <- "employee_data.parquet"
-write_parquet(df_raw_csv, parquet_file)
-
-# Retrieval from Parquet is significantly more efficient than row-based CSVs,
-# as it allows the system to read only the specific columns requested.
-df_raw <- read_parquet(parquet_file)
-
-message("[OK] Advanced Retrieval: Data loaded from high-performance Parquet storage.")
+message("[OK] File loaded — ", nrow(df_raw), " rows x ",
+        ncol(df_raw), " columns")
 
 # =============================================================================
 # SECTION 3: RAW DATA EXPLORATION
@@ -569,6 +558,8 @@ cat(sprintf("  %-30s %.2f%%\n","Attrition Rate:",
 write.csv(df_clean, OUTPUT_CSV, row.names = FALSE)
 cat("\n[OK] Clean dataset saved to:", OUTPUT_CSV, "\n")
 
+# We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
+# columnar format that allows for high-speed I/O and better compression.
 clean_parquet <- "employee_attrition_cleaned.parquet"
 write_parquet(df_clean, clean_parquet)
 
