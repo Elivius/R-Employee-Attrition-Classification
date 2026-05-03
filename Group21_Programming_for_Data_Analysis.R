@@ -225,14 +225,14 @@ message("[OK] Configuration set — proceeding to cleaning.")
 
 # -----------------------------------------------------------------------------
 # 5.1 Standardise Column Names
-# Problem (Q2): column names have mixed case and spaces
+# Problem (Q2): In case column names have mixed case and spaces
 # Fix: clean_names() converts everything to lowercase snake_case
 # MonthlyIncome -> monthly_income | DistanceFromHome -> distance_from_home
 # -----------------------------------------------------------------------------
-df <- df_raw %>% clean_names()
+df_cleaning <- df_raw %>% clean_names()
 
 cat("\n[OK] 5.1 Column names standardised.\n")
-print(names(df))
+print(names(df_cleaning))
 
 
 # -----------------------------------------------------------------------------
@@ -241,7 +241,7 @@ print(names(df))
 # IMPROVEMENT: pre-clean each column ONCE with tolower(trimws()) first
 # then case_when conditions are simple — no repeated wrapping needed
 # -----------------------------------------------------------------------------
-df <- df %>%
+df_cleaning <- df_cleaning %>%
   
   # Step 1 — normalise all categorical columns to lowercase, no spaces
   # Done once here so case_when below is clean and easy to read
