@@ -145,11 +145,11 @@ print(table(df_raw$Attrition, useNA = "always"))
 # sort() puts similar values next to each other — makes duplicates obvious
 cat("\n--- Unique Values in Categorical Columns ---\n")
 
-cat_cols <- df_raw %>%
+char_cols <- df_raw %>%
   select(where(is.character)) %>%   # find all text columns automatically
   names()                            # extract column names as a list
 
-for (col in cat_cols) {
+for (col in char_cols) {
   cat("\n", col, ":\n")
   print(sort(unique(df_raw[[col]])))
 }
