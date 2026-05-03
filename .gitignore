@@ -16,3 +16,4 @@
 # renv folders (if using)
 renv/library/
 renv/staging/
+.positai
