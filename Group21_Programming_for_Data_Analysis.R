@@ -229,35 +229,27 @@ message("[OK] Configuration set — proceeding to cleaning.")
 # Fix: clean_names() converts everything to lowercase snake_case
 # MonthlyIncome -> monthly_income | DistanceFromHome -> distance_from_home
 # -----------------------------------------------------------------------------
-df_cleaning <- df_raw %>% clean_names()
+df <- df_raw %>% clean_names()
 
 cat("\n[OK] 5.1 Column names standardised.\n")
-print(names(df_cleaning))
+print(names(df))
 
 
 # -----------------------------------------------------------------------------
-# 5.2 Clean All Categorical Columns
+# 5.2 Universal Categorical Normalization
 # Problem (Q5b): same values written in many inconsistent formats
 # IMPROVEMENT: pre-clean each column ONCE with tolower(trimws()) first
 # then case_when conditions are simple — no repeated wrapping needed
 # -----------------------------------------------------------------------------
-df_cleaning <- df_cleaning %>%
+df <- df %>%
   
   # Step 1 — normalise all categorical columns to lowercase, no spaces
   # Done once here so case_when below is clean and easy to read
-  mutate(
-    attrition       = tolower(trimws(attrition)),
-    business_travel = tolower(trimws(business_travel)),
-    department      = tolower(trimws(department)),
-    gender          = tolower(trimws(gender)),
-    over_time       = tolower(trimws(over_time)),
-    over18          = toupper(trimws(over18))   # over18 uses uppercase "Y"
-  ) %>%
+  mutate(across(where(is.character), ~tolower(trimws(.)))) %>%
   
   # Step 2 — standardise to final clean values
   # Conditions are now simple %in% checks — no tolower/trimws needed
   mutate(
-    
     # Attrition — target variable
     # Found in Section 3: "yes" "YES" "Yes" "1" "no" "NO" "No" "0"
     attrition = case_when(
@@ -270,30 +262,32 @@ df_cleaning <- df_cleaning %>%
     # Found in Section 3: "rare" "TRAVEL_RARELY" "frequent" "nil" "non-travel"
     business_travel = case_when(
       business_travel %in%
-        c("travel_rarely", "rare", "rarely",
-          "travel rarely")                        ~ "Travel_Rarely",
+        c("travel-rarely", "travel_rarely", "rare", "rarely", "travel rarely")                      ~ "Travel_Rarely",
       business_travel %in%
-        c("travel_frequently", "frequent",
-          "frequently", "travel frequently")      ~ "Travel_Frequently",
+        c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently")  ~ "Travel_Frequently",
       business_travel %in%
-        c("non-travel", "non_travel", "nontravel",
-          "nil", "no travel", "non travel",
-          "none")                                 ~ "Non_Travel",
+        c("non-travel", "non_travel", "non", "nontravel", "nil", "no travel", "non travel", "none") ~ "Non_Travel",
       TRUE ~ NA_character_
     ),
     
     # Department
     # Found in Section 3: "sale" "r&d" "Research & Development" "hr"
     department = case_when(
-      department %in% c("sales", "sale")          ~ "Sales",
-      department %in%
-        c("r&d", "research & development",
-          "research and development",
-          "rd", "r & d")                         ~ "Research & Development",
-      department %in%
-        c("hr", "human resources",
-          "human resource")                       ~ "Human Resources",
+      department %in% c("sales", "sale")                                                            ~ "Sales",
+      department %in% c("r&d", "research & development", "research and development", "rd", "r & d") ~ "Research & Development",
+      department %in% c("hr", "h&r", "human resources", "human resource")                           ~ "Human Resources",
       TRUE ~ NA_character_
+    ),
+    
+    # Education Field
+    # Found in Section 3: Synonyms like 'ls' for 'Life Sciences' and 'med' for 'Medical'
+    education_field = case_when(
+      education_field %in% c("life sciences", "ls")                            ~ "Life Sciences",
+      education_field %in% c("medical", "med")                                 ~ "Medical",
+      education_field %in% c("marketing", "mkt")                               ~ "Marketing",
+      education_field %in% c("technical degree", "td")                         ~ "Technical Degree",
+      education_field %in% c("hr", "h&r", "human resources", "human resource") ~ "Human Resources",
+      TRUE                                                                     ~ "Other"
     ),
     
     # Gender
@@ -302,6 +296,30 @@ df_cleaning <- df_cleaning %>%
       gender %in% c("f", "female") ~ "Female",
       gender %in% c("m", "male")   ~ "Male",
       TRUE ~ NA_character_
+    ),
+    
+    # Job Role
+    # Found in Section 3: "rep" vs "representative", "exe" vs "executive"
+    job_role = case_when(
+      str_detect(job_role, "healthcare") ~ "Healthcare Representative",
+      str_detect(job_role, "lab")        ~ "Laboratory Technician",
+      str_detect(job_role, "manufac")    ~ "Manufacturing Director",
+      str_detect(job_role, "research s") ~ "Research Scientist",
+      str_detect(job_role, "research d") ~ "Research Director",
+      str_detect(job_role, "sales exe")  ~ "Sales Executive",
+      str_detect(job_role, "sales rep")  ~ "Sales Representative",
+      str_detect(job_role, "manager")    ~ "Manager",
+      str_detect(job_role, "human")      ~ "Human Resources",
+      TRUE                               ~ "Other"
+    ),
+    
+    # Marital Status
+    # Found in Section 3: Casing (already fixed by tolower), but make it report-ready
+    marital_status = case_when(
+      marital_status == "single"   ~ "Single",
+      marital_status == "married"  ~ "Married",
+      marital_status == "divorced" ~ "Divorced",
+      TRUE                         ~ NA_character_
     ),
     
     # OverTime
@@ -314,7 +332,7 @@ df_cleaning <- df_cleaning %>%
     
     # Over18 — should always be "Y", anything else is invalid
     over18 = case_when(
-      over18 == "Y" ~ "Y",
+      over18 == "y" ~ "Y",
       TRUE ~ NA_character_
     )
   )
@@ -337,8 +355,8 @@ clean_numeric <- function(x) {
 
 # Known categorical columns — excluded from numeric cleaning
 known_categorical <- c(
-  "attrition", "business_travel", "department", "gender",
-  "over_time", "over18", "marital_status", "education_field", "job_role"
+  "attrition", "business_travel", "department", "education_field", "gender",
+  "job_role", "marital_status", "over_time", "over18"
 )
 
 # Auto-detect columns that:
@@ -357,7 +375,7 @@ df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
 cat("\n[OK] 5.3 Cleaned", length(dirty_cols), "dirty numeric columns.\n")
 if (length(dirty_cols) > 0) {
-  cat("     Columns:", paste(dirty_cols, collapse = ", "), "\n")
+  cat("Columns:", paste(dirty_cols, collapse = ", "), "\n")
 }
 
 
@@ -369,8 +387,7 @@ if (length(dirty_cols) > 0) {
 # -----------------------------------------------------------------------------
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
-cat("\n[OK] 5.4 Removed", rows_before_dedup - nrow(df),
-    "duplicate rows.\n")
+cat("\n[OK] 5.4 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -384,7 +401,7 @@ rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
 cat("\n[OK] 5.5 Removed", rows_before_target - nrow(df),
     "rows with missing Attrition (target variable).\n")
-cat("     Rows remaining:", nrow(df), "\n")
+cat("Rows remaining:", nrow(df), "\n")
 
 
 # -----------------------------------------------------------------------------
