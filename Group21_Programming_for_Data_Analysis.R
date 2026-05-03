@@ -8,12 +8,12 @@
 #
 # SCRIPT OVERVIEW
 # ---------------
-# Section 1 : Libraries           — load tools first
-# Section 2 : Read Raw File       — load CSV as-is
+# Section 1 : Libraries            — load tools first
+# Section 2 : Read Raw File        — load CSV as-is
 # Section 3 : Raw Data Exploration — understand data BEFORE anything else
-# Section 4 : Configuration       — set values after seeing the data
-# Section 5 : Cleaning            — fix what Section 3 revealed
-# Section 6 : Validation          — confirm cleaning worked correctly
+# Section 4 : Configuration        — set values after seeing the data
+# Section 5 : Cleaning             — fix what Section 3 revealed
+# Section 6 : Validation           — confirm cleaning worked correctly
 #
 # NOTE: Sections 7 onwards (Analysis, Model etc.) are written by your group
 # based on findings from this base script
