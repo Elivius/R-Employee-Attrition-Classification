@@ -282,11 +282,11 @@ df <- df %>%
     # Found in Section 3: Synonyms like 'ls' for 'Life Sciences' and 'med' for 'Medical'
     education_field = case_when(
       education_field %in% c("life sciences", "ls", "2")                            ~ "Life Sciences",
-      education_field %in% c("medical", "med", "4")                                 ~ "Medical",
+      education_field %in% c("medical", "med", "4")                                 ~ "Medical Sciences",
       education_field %in% c("marketing", "mkt", "3")                               ~ "Marketing",
-      education_field %in% c("technical degree", "td", "6")                         ~ "Technical Degree",
+      education_field %in% c("technical degree", "td", "6")                         ~ "Technical",
       education_field %in% c("hr", "h&r", "human resources", "human resource", "1") ~ "Human Resources",
-      TRUE                                                                          ~ "Other"
+      TRUE                                                                          ~ "Others"
     ),
     
     # Gender
@@ -494,20 +494,30 @@ if (length(missing_clean) == 0) {
 # --- 6.2 Confirm Categorical Cleaning Worked ---
 # Compare with Section 3 — should now show only clean consistent values (Match with dataset_description.txt)
 # Target and Key Demographics
+cat("\n--- 6.2 Cleaned Unique Value ---\n")
+
+# Target & Basic Info
 cat("Attrition         :"); print(levels(df_clean$attrition))
 cat("Gender            :"); print(levels(df_clean$gender))
 cat("Marital Status    :"); print(levels(df_clean$marital_status))
+cat("OverTime          :"); print(levels(df_clean$over_time))
 
-# Professional Info (The ones with high anomalies in Sec 3)
+# Professional & Education
 cat("Department        :"); print(levels(df_clean$department))
 cat("Business Travel   :"); print(levels(df_clean$business_travel))
 cat("Education Field   :"); print(levels(df_clean$education_field))
 cat("Job Role          :"); print(levels(df_clean$job_role))
+cat("Job Level         :"); print(levels(df_clean$job_level))
+cat("Stock Option Level:"); print(levels(df_clean$stock_option_level))
 
-# Ordinal Scales (Confirming CONFIG LBLs applied correctly)
-cat("Education Level   :"); print(levels(df_clean$education))
+# Ordinal Scales (Satisfaction & Performance)
+cat("Education         :"); print(levels(df_clean$education))
 cat("Job Satisfaction  :"); print(levels(df_clean$job_satisfaction))
+cat("Env. Satisfaction :"); print(levels(df_clean$environment_satisfaction))
+cat("Job Involvement   :"); print(levels(df_clean$job_involvement))
+cat("Rel. Satisfaction :"); print(levels(df_clean$relationship_satisfaction))
 cat("Work Life Balance :"); print(levels(df_clean$work_life_balance))
+cat("Performance Rating:"); print(levels(df_clean$performance_rating))
 
 
 # --- 6.3 Confirm Imputation Values Used ---
