@@ -492,13 +492,22 @@ if (length(missing_clean) == 0) {
 
 
 # --- 6.2 Confirm Categorical Cleaning Worked ---
-# Compare with Section 3 — should now show only clean consistent values
-cat("\n--- 6.2 Cleaned Unique Values ---\n")
-cat("Attrition      :"); print(levels(df_clean$attrition))
-cat("Department     :"); print(levels(df_clean$department))
-cat("BusinessTravel :"); print(levels(df_clean$business_travel))
-cat("Gender         :"); print(levels(df_clean$gender))
-cat("OverTime       :"); print(levels(df_clean$over_time))
+# Compare with Section 3 — should now show only clean consistent values (Match with dataset_description.txt)
+# Target and Key Demographics
+cat("Attrition         :"); print(levels(df_clean$attrition))
+cat("Gender            :"); print(levels(df_clean$gender))
+cat("Marital Status    :"); print(levels(df_clean$marital_status))
+
+# Professional Info (The ones with high anomalies in Sec 3)
+cat("Department        :"); print(levels(df_clean$department))
+cat("Business Travel   :"); print(levels(df_clean$business_travel))
+cat("Education Field   :"); print(levels(df_clean$education_field))
+cat("Job Role          :"); print(levels(df_clean$job_role))
+
+# Ordinal Scales (Confirming CONFIG LBLs applied correctly)
+cat("Education Level   :"); print(levels(df_clean$education))
+cat("Job Satisfaction  :"); print(levels(df_clean$job_satisfaction))
+cat("Work Life Balance :"); print(levels(df_clean$work_life_balance))
 
 
 # --- 6.3 Confirm Imputation Values Used ---
