@@ -32,9 +32,9 @@ message("[OK] All libraries loaded — ready to proceed.")
 
 # =============================================================================
 # SECTION 2: DATA RETRIEVAL PIPELINE
-# Instead of a standard row-based CSV read, we implement a Columnar Storage
-# Pipeline using Apache Arrow. This satisfies the "Advanced Concept" 
-# requirement to enhance data retrieval effectiveness and memory efficiency.
+# We implement a robust CSV retrieval pipeline utilizing 'na.strings' mapping
+# to handle multiple null-value variations identified during exploration.
+# This ensures a clean data entry point for the pre-processing engine.
 # =============================================================================
 
 # Before running — set your working directory to where your CSV is saved:
