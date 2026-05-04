@@ -281,12 +281,12 @@ df <- df %>%
     # Education Field
     # Found in Section 3: Synonyms like 'ls' for 'Life Sciences' and 'med' for 'Medical'
     education_field = case_when(
-      education_field %in% c("life sciences", "ls")                            ~ "Life Sciences",
-      education_field %in% c("medical", "med")                                 ~ "Medical",
-      education_field %in% c("marketing", "mkt")                               ~ "Marketing",
-      education_field %in% c("technical degree", "td")                         ~ "Technical Degree",
-      education_field %in% c("hr", "h&r", "human resources", "human resource") ~ "Human Resources",
-      TRUE                                                                     ~ "Other"
+      education_field %in% c("life sciences", "ls", "2")                            ~ "Life Sciences",
+      education_field %in% c("medical", "med", "4")                                 ~ "Medical",
+      education_field %in% c("marketing", "mkt", "3")                               ~ "Marketing",
+      education_field %in% c("technical degree", "td", "6")                         ~ "Technical Degree",
+      education_field %in% c("hr", "h&r", "human resources", "human resource", "1") ~ "Human Resources",
+      TRUE                                                                          ~ "Other"
     ),
     
     # Gender
