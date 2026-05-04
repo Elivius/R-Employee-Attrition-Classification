@@ -31,7 +31,7 @@ pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow)
 message("[OK] All libraries loaded — ready to proceed.")
 
 # =============================================================================
-# SECTION 2: ADVANCED DATA RETRIEVAL PIPELINE (Parquet Implementation)
+# SECTION 2: DATA RETRIEVAL PIPELINE
 # Instead of a standard row-based CSV read, we implement a Columnar Storage
 # Pipeline using Apache Arrow. This satisfies the "Advanced Concept" 
 # requirement to enhance data retrieval effectiveness and memory efficiency.
