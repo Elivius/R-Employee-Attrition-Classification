@@ -436,6 +436,7 @@ cat("\n[OK] 5.6 Imputation complete — filled",
 # -----------------------------------------------------------------------------
 df <- df %>%
   mutate(
+    # Ordinal Variables (Ranked)
     education                 = factor(education, levels = 1:5, labels = LBL_EDU),
     environment_satisfaction  = factor(environment_satisfaction, levels = 1:4, labels = LBL_4POINT),
     job_satisfaction          = factor(job_satisfaction, levels = 1:4, labels = LBL_4POINT),
@@ -443,12 +444,24 @@ df <- df %>%
     relationship_satisfaction = factor(relationship_satisfaction, levels = 1:4, labels = LBL_4POINT),
     work_life_balance         = factor(work_life_balance, levels = 1:4, labels = LBL_WLB),
     performance_rating        = factor(performance_rating, levels = 1:4, labels = LBL_PERF),
+    
+    # Seniority & Financial Buckets
+    job_level                 = factor(job_level),
+    stock_option_level        = factor(stock_option_level),
+    
+    # Target Variable
     attrition                 = factor(attrition, levels = c("No", "Yes")),
+    
+    # Nominal Variables (Unordered Labels)
     gender                    = factor(gender),
     department                = factor(department),
     business_travel           = factor(business_travel),
     over_time                 = factor(over_time),
-    marital_status            = factor(marital_status)
+    marital_status            = factor(marital_status),
+    
+    # Categorical Labels
+    education_field           = factor(education_field),
+    job_role                  = factor(job_role)
   )
 
 cat("[OK] 5.7 Columns converted to labelled factors.\n")
