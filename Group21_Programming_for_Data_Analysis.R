@@ -203,11 +203,10 @@ COLOR_GREEN  <- "#4CAF50"   # green  = no overtime
 # --- Factor Label Sets ---
 # Defined once here — reused in Section 5
 # You know these from your dataset description file
-LBL_4POINT <- c("Low", "Medium", "High", "Very High")      # satisfaction scales
-LBL_WLB    <- c("Bad", "Good", "Better", "Best")            # work life balance
-LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")  # performance rating
-LBL_EDU    <- c("Below College", "College",                  # education level
-                "Bachelor", "Master", "Doctor")
+LBL_4POINT <- c("Low", "Medium", "High", "Very High")                       # satisfaction scales
+LBL_WLB    <- c("Bad", "Good", "Better", "Best")                            # work life balance
+LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")                  # performance rating
+LBL_EDU    <- c("Below College", "College", "Bachelor", "Master", "Doctor") # education level
 
 # --- Validation Behaviour ---
 # TRUE  = remove impossible rows from dataset
@@ -437,26 +436,19 @@ cat("\n[OK] 5.6 Imputation complete — filled",
 # -----------------------------------------------------------------------------
 df <- df %>%
   mutate(
-    education                 = factor(education,
-                                       levels = 1:5, labels = LBL_EDU),
-    environment_satisfaction  = factor(environment_satisfaction,
-                                       levels = 1:4, labels = LBL_4POINT),
-    job_satisfaction          = factor(job_satisfaction,
-                                       levels = 1:4, labels = LBL_4POINT),
-    job_involvement           = factor(job_involvement,
-                                       levels = 1:4, labels = LBL_4POINT),
-    relationship_satisfaction = factor(relationship_satisfaction,
-                                       levels = 1:4, labels = LBL_4POINT),
-    work_life_balance         = factor(work_life_balance,
-                                       levels = 1:4, labels = LBL_WLB),
-    performance_rating        = factor(performance_rating,
-                                       levels = 1:4, labels = LBL_PERF),
-    attrition       = factor(attrition,       levels = c("No", "Yes")),
-    gender          = factor(gender),
-    department      = factor(department),
-    business_travel = factor(business_travel),
-    over_time       = factor(over_time),
-    marital_status  = factor(marital_status)
+    education                 = factor(education, levels = 1:5, labels = LBL_EDU),
+    environment_satisfaction  = factor(environment_satisfaction, levels = 1:4, labels = LBL_4POINT),
+    job_satisfaction          = factor(job_satisfaction, levels = 1:4, labels = LBL_4POINT),
+    job_involvement           = factor(job_involvement, levels = 1:4, labels = LBL_4POINT),
+    relationship_satisfaction = factor(relationship_satisfaction, levels = 1:4, labels = LBL_4POINT),
+    work_life_balance         = factor(work_life_balance, levels = 1:4, labels = LBL_WLB),
+    performance_rating        = factor(performance_rating, levels = 1:4, labels = LBL_PERF),
+    attrition                 = factor(attrition, levels = c("No", "Yes")),
+    gender                    = factor(gender),
+    department                = factor(department),
+    business_travel           = factor(business_travel),
+    over_time                 = factor(over_time),
+    marital_status            = factor(marital_status)
   )
 
 cat("[OK] 5.7 Columns converted to labelled factors.\n")
