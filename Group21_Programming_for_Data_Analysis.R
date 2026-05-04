@@ -261,11 +261,11 @@ df <- df %>%
     # Found in Section 3: "rare" "TRAVEL_RARELY" "frequent" "nil" "non-travel"
     business_travel = case_when(
       business_travel %in%
-        c("travel-rarely", "travel_rarely", "rare", "rarely", "travel rarely")                      ~ "Travel_Rarely",
+        c("travel-rarely", "travel_rarely", "rare", "rarely", "travel rarely")                      ~ "Travel Rarely",
       business_travel %in%
-        c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently")  ~ "Travel_Frequently",
+        c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently")  ~ "Travel Frequently",
       business_travel %in%
-        c("non-travel", "non_travel", "non", "nontravel", "nil", "no travel", "non travel", "none") ~ "Non_Travel",
+        c("non-travel", "non_travel", "non", "nontravel", "nil", "no travel", "non travel", "none") ~ "No Travel",
       TRUE ~ NA_character_
     ),
     
