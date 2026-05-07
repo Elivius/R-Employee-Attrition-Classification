@@ -187,6 +187,7 @@ cat("\n[OK] Exploration complete — review output above then proceed to Section
 # --- File Settings ---
 DATA_FILE        <- raw_file
 OUTPUT_CSV       <- "employee_attrition_cleaned.csv"
+OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 OUTPUT_STATS_CSV <- "statistical_test_results.csv"
 
 # --- Model Settings ---
@@ -597,8 +598,8 @@ cat("\n[OK] Clean dataset saved to:", OUTPUT_CSV, "\n")
 
 # We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
 # columnar format that allows for high-speed I/O and better compression.
-clean_parquet <- "employee_attrition_cleaned.parquet"
-write_parquet(df_clean, clean_parquet)
+write_parquet(df_clean, OUTPUT_PARQUET)
+cat("\n[OK] Clean dataset saved to:", OUTPUT_PARQUET, "\n")
 
 cat("\n[OK] Clean data saved as CSV and Optimized Parquet.")
 cat("\n>>> BASE SCRIPT COMPLETE — clean_parquet is ready for analysis.\n")
