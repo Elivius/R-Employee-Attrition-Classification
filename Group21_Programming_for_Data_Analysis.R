@@ -580,19 +580,16 @@ if (nrow(flag_impossible) > 0) {
 
 # --- 6.5 Final Data Health Summary ---
 cat("\n--- 6.5 Final Data Health Summary ---\n")
-cat(sprintf("  %-30s %d\n",    "Raw rows loaded:",        nrow(df_raw)))
-cat(sprintf("  %-30s %d\n",    "Duplicates removed:",     rows_before_dedup - nrow(df)))
-cat(sprintf("  %-30s %d\n",    "Missing target removed:", rows_before_target - nrow(df)))
-cat(sprintf("  %-30s %d\n",    "NAs imputed:",            na_before - na_after))
+cat(sprintf("  %-30s %d\n",    "Raw rows loaded:",         nrow(df_raw)))
+cat(sprintf("  %-30s %d\n",    "Duplicates removed:",      rows_before_dedup - nrow(df)))
+cat(sprintf("  %-30s %d\n",    "Missing target removed:",  rows_before_target - nrow(df)))
+cat(sprintf("  %-30s %d\n",    "NAs imputed:",             na_before - na_after))
 cat(sprintf("  %-30s %d\n",    "Impossible rows removed:", nrow(flag_impossible)))
-cat(sprintf("  %-30s %d\n",    "Final clean rows:",       nrow(df_clean)))
-cat(sprintf("  %-30s %d\n",    "Remaining NAs:",          sum(is.na(df_clean))))
-cat(sprintf("  %-30s %d\n",    "Stayed (No):",
-            sum(df_clean$attrition == "No")))
-cat(sprintf("  %-30s %d\n",    "Left (Yes):",
-            sum(df_clean$attrition == "Yes")))
-cat(sprintf("  %-30s %.2f%%\n","Attrition Rate:",
-            sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
+cat(sprintf("  %-30s %d\n",    "Final clean rows:",        nrow(df_clean)))
+cat(sprintf("  %-30s %d\n",    "Remaining NAs:",           sum(is.na(df_clean))))
+cat(sprintf("  %-30s %d\n",    "Stayed (No):",             sum(df_clean$attrition == "No")))
+cat(sprintf("  %-30s %d\n",    "Left (Yes):",              sum(df_clean$attrition == "Yes")))
+cat(sprintf("  %-30s %.2f%%\n","Attrition Rate:",          sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
 
 # Export clean dataset
 write.csv(df_clean, OUTPUT_CSV, row.names = FALSE)
