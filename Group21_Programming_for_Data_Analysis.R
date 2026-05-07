@@ -564,8 +564,7 @@ if (nrow(flag_impossible) > 0) {
   if (FLAG_AND_REMOVE) {
     df_clean <- df_clean %>%
       filter(!employee_number %in% flag_impossible$employee_number)
-    cat("[ACTION] Removed", nrow(flag_impossible),
-        "impossible rows.\n")
+    cat("[ACTION] Removed", nrow(flag_impossible), "impossible rows.\n")
   } else {
     df_clean <- df_clean %>%
       mutate(data_flag = ifelse(
