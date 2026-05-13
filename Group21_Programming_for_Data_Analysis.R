@@ -8,15 +8,14 @@
 #
 # SCRIPT OVERVIEW
 # ---------------
-# Section 1 : Libraries            — load tools first
-# Section 2 : Read Raw File        — load CSV as-is
-# Section 3 : Raw Data Exploration — understand data BEFORE anything else
-# Section 4 : Configuration        — set values after seeing the data
-# Section 5 : Cleaning             — fix what Section 3 revealed
-# Section 6 : Validation           — confirm cleaning worked correctly
-#
-# NOTE: Sections 7 onwards (Analysis, Model etc.) are written by your group
-# based on findings from this base script
+# Section 1 : Libraries                     - load tools first
+# Section 2 : Read Raw File                 - load CSV as-is
+# Section 3 : Raw Data Exploration          - understand data BEFORE anything else
+# Section 4 : Configuration                 - set values after seeing the data
+# Section 5 : Cleaning                      - fix what Section 3 revealed
+# Section 6 : Validation                    - confirm cleaning worked correctly
+# Section 7 : Individual Objective Analysis - Analyse based on cleaned dataset 
+# 
 # =============================================================================
 
 
@@ -26,7 +25,7 @@
 # =============================================================================
 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow)
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret)
 
 message("[OK] All libraries loaded — ready to proceed.")
 
@@ -61,13 +60,8 @@ if (!file.exists(raw_file)) {
 # Load the raw file
 # stringsAsFactors = FALSE -> keeps text as plain text, not auto-converted
 # na.strings -> tells R which values to treat as missing (NA)
-df_raw <- read.csv(
-  raw_file,
-  stringsAsFactors = FALSE,
-  na.strings = c("", "NA", "N/A", "na", "n/a",
-                 "nil", "Nil", "NIL",
-                 "null", "NULL", "none", "None")
-)
+df_raw <- read.csv(raw_file, stringsAsFactors = FALSE,
+                   na.strings = c("", "NA", "N/A", "na", "n/a", "nil", "Nil", "NIL", "null", "NULL", "none", "None"))
 
 message("[OK] File loaded — ", nrow(df_raw), " rows x ",
         ncol(df_raw), " columns")
@@ -80,6 +74,7 @@ message("[OK] File loaded — ", nrow(df_raw), " rows x ",
 #   3. What does it look like?
 #   4. How clean is it?
 #   5. What are the actual values?
+#   6. Is there Zero Variance feature?
 # Every finding here justifies a cleaning decision in Section 5
 # =============================================================================
 
@@ -175,6 +170,13 @@ for (col in num_cols) {
               col, r[1], avg, r[2]))
 }
 
+# 6. Zero Variance (Feature that have same value every single row) - Use caret package
+# We saw that at 5b and 5c some feature that only have same value like Over18 only "Y"
+# This is Zero Variance feature, it provides zero information to help a model to distinguish between different employees
+near_zero_variance_feature <- nearZeroVar(df_raw, saveMetrics = TRUE) # saveMetrics to display details in 2D table
+print(near_zero_variance_feature[near_zero_variance_feature$zeroVar == TRUE, ])
+
+
 cat("\n[OK] Exploration complete — review output above then proceed to Section 4.\n")
 
 
@@ -236,7 +238,21 @@ print(names(df))
 
 
 # -----------------------------------------------------------------------------
-# 5.2 Universal Categorical Normalization
+# 5.2 Remove Zero Variance Features
+# Problem (Q6)
+# -----------------------------------------------------------------------------
+
+bad_cols <- nearZeroVar(df)
+
+if (length(bad_cols) > 0) {
+  df <- df[, -bad_cols]
+  cat("\n[OK] 5.2 Removed", length(bad_cols), "zero-variance columns.\n")
+} else {
+  cat("All columns have variance. No removal needed.\n")
+}
+
+# -----------------------------------------------------------------------------
+# 5.3 Universal Categorical Normalization
 # Problem (Q5b): same values written in many inconsistent formats
 # IMPROVEMENT: pre-clean each column ONCE with tolower(trimws()) first
 # then case_when conditions are simple — no repeated wrapping needed
@@ -328,20 +344,14 @@ df <- df %>%
       over_time %in% c("yes", "1") ~ "Yes",
       over_time %in% c("no",  "0") ~ "No",
       TRUE ~ NA_character_
-    ),
-    
-    # Over18 — should always be "Y", anything else is invalid
-    over18 = case_when(
-      over18 == "y" ~ "Y",
-      TRUE ~ NA_character_
     )
   )
 
-cat("[OK] 5.2 Categorical columns standardised.\n")
+cat("[OK] 5.3 Categorical columns standardised.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.3 Clean Dirty Numeric Columns
+# 5.4 Clean Dirty Numeric Columns
 # Problem (Q2 + Q5c): numeric columns stored as text with junk characters
 # Examples found: "1423_"  "329?"  "4_"  "670?"  "1?"  "2_"
 # Fix: strip anything that is not a digit or decimal point
@@ -356,7 +366,7 @@ clean_numeric <- function(x) {
 # Known categorical columns — excluded from numeric cleaning
 known_categorical <- c(
   "attrition", "business_travel", "department", "education_field", "gender",
-  "job_role", "marital_status", "over_time", "over18"
+  "job_role", "marital_status", "over_time"
 )
 
 # Auto-detect columns that:
@@ -373,25 +383,25 @@ dirty_cols <- names(df)[
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
-cat("\n[OK] 5.3 Cleaned", length(dirty_cols), "dirty numeric columns.\n")
+cat("\n[OK] 5.4 Cleaned", length(dirty_cols), "dirty numeric columns.\n")
 if (length(dirty_cols) > 0) {
   cat("Columns:", paste(dirty_cols, collapse = ", "), "\n")
 }
 
 
 # -----------------------------------------------------------------------------
-# 5.4 Remove Duplicate Rows
+# 5.5 Remove Duplicate Rows
 # Problem (Q4b): duplicate rows inflate analysis results
 # Fix: keep only the first occurrence of each duplicated row
 # distinct() compares every column — only removes EXACT full-row duplicates
 # -----------------------------------------------------------------------------
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
-cat("\n[OK] 5.4 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
+cat("\n[OK] 5.5 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.5 Remove Rows With Missing Target Variable (Attrition)
+# 5.6 Remove Rows With Missing Target Variable (Attrition)
 # Problem: 29 rows have no Attrition value — found in Section 3
 # Why remove: Attrition is what we are PREDICTING
 # Cannot guess whether someone left or stayed — no valid imputation exists
@@ -399,13 +409,13 @@ cat("\n[OK] 5.4 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
 # -----------------------------------------------------------------------------
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-cat("\n[OK] 5.5 Removed", rows_before_target - nrow(df),
+cat("\n[OK] 5.6 Removed", rows_before_target - nrow(df),
     "rows with missing Attrition (target variable).\n")
 cat("Rows remaining:", nrow(df), "\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.6 Impute Remaining Missing Values
+# 5.7 Impute Remaining Missing Values
 # IMPROVEMENT: combined into ONE mutate() instead of two separate calls
 # Numeric   -> median (robust to outliers, not skewed by extremes)
 # Character -> mode   (most common value — only logical choice for text)
@@ -425,12 +435,12 @@ df <- df %>%
   )
 
 na_after <- sum(is.na(df))
-cat("\n[OK] 5.6 Imputation complete — filled",
+cat("\n[OK] 5.7 Imputation complete — filled",
     na_before - na_after, "missing values.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.7 Convert to Labelled Factors
+# 5.8 Convert to Labelled Factors
 # Labels come from CONFIG (Section 4) — change them there, not here
 # Must happen AFTER imputation — factors don't work well with imputation
 # Without this R treats Education=4 as mathematically twice Education=2
@@ -465,7 +475,7 @@ df <- df %>%
     job_role                  = factor(job_role)
   )
 
-cat("[OK] 5.7 Columns converted to labelled factors.\n")
+cat("[OK] 5.8 Columns converted to labelled factors.\n")
 
 # Rename as clean dataset
 df_clean <- df
