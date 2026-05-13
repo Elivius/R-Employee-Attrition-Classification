@@ -590,12 +590,12 @@ cat("  Flag 2 remaining:", flag2_after, "\n")
 cat("  Flag 3 remaining:", flag3_after, "\n")
 
 # Remove the final 42 irreconcilable rows
-rows_before_final <- nrow(df_clean)
+rows_before_impossible_correction <- nrow(df_clean)
 
 df_clean <- df_clean %>%
   filter(total_working_years >= years_at_company)
 
-message("\n[ACTION] Removed final ", rows_before_final - nrow(df_clean), 
+message("\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df_clean), 
     " irreconcilable rows that failed heuristic repair.\n")
 
 # Verify all fixed - after removal
@@ -606,7 +606,7 @@ flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
 flag3_after <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
                    na.rm = TRUE)
 
-final_removed <- rows_before_final - nrow(df_clean)
+final_removed <- rows_before_impossible_correction - nrow(df_clean)
 total_corrected <- total_initial_flags - final_removed
 
 cat("\nAfter removal:\n")
@@ -623,12 +623,12 @@ message("\n[OK] 6.4 All impossible logic corrected.
 # --- 6.5 Final Data Health Summary ---
 cat("\n--- 6.5 Final Data Health Summary ---\n")
 cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
-cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      rows_before_dedup - nrow(df)))
-cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - nrow(df)))
+cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      rows_before_dedup - rows_before_target))
+cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - rows_before_impossible_correction))
 cat(sprintf("  %-40s %d\n",    "NAs imputed:",                             na_before - na_after))
 cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",  length(bad_cols)))
-cat(sprintf("  %-40s %d\n",    "Impossible rows corrected:",               total_corrected))
-cat(sprintf("  %-40s %d\n",    "Impossible rows removed:",                 final_removed))
+cat(sprintf("  %-40s %d\n",    "Impossible logic corrected:",              total_corrected))
+cat(sprintf("  %-40s %d\n",    "Impossible logic removed:",                final_removed))
 cat(sprintf("  %-40s %d\n",    "Final clean rows:",                        nrow(df_clean)))
 cat(sprintf("  %-40s %d\n",    "Final clean cols:",                        ncol(df_clean)))
 cat(sprintf("  %-40s %d\n",    "Remaining NAs:",                           sum(is.na(df_clean))))
