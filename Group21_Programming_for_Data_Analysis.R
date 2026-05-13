@@ -553,7 +553,7 @@ total_initial_flags <- flag1_count + flag2_count + flag3_count
 
 cat("Before correction:\n")
 cat("  Flag 1 (TotalWorkingYears < YearsAtCompany)  :", flag1_count, "rows\n")
-cat("  Flag 2 (Age < TotalWorkingYears + 18)        :", flag2_count, "rows\n")
+cat("  Flag 2 (Age < TotalWorkingYears + 14)        :", flag2_count, "rows\n")
 cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
 cat("Total Impossible Logic:", total_initial_flags,"\n")
 
@@ -566,8 +566,8 @@ df_clean <- df_clean %>%
     # as long as you have been at this company
     total_working_years = pmax(total_working_years, years_at_company),
     
-    # Fix 2: total_working_years must be <= age - 18
-    # Take the lower value — cannot have worked before age 18
+    # Fix 2: total_working_years must be <= age - 14
+    # Take the lower value — cannot have worked before age 14
     total_working_years = pmin(total_working_years, age - 14),
     
     # Fix 3: years_in_current_role must be <= years_at_company
@@ -626,7 +626,7 @@ cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(
 cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      rows_before_dedup - nrow(df)))
 cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - nrow(df)))
 cat(sprintf("  %-40s %d\n",    "NAs imputed:",                             na_before - na_after))
-cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",   length(bad_cols)))
+cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",  length(bad_cols)))
 cat(sprintf("  %-40s %d\n",    "Impossible rows corrected:",               total_corrected))
 cat(sprintf("  %-40s %d\n",    "Impossible rows removed:",                 final_removed))
 cat(sprintf("  %-40s %d\n",    "Final clean rows:",                        nrow(df_clean)))
