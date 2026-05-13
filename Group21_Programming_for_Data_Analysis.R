@@ -598,7 +598,7 @@ df_clean <- df_clean %>%
 message("\n[ACTION] Removed final ", rows_before_final - nrow(df_clean), 
     " irreconcilable rows that failed heuristic repair.\n")
 
-# Verify all fixed
+# Verify all fixed - after removal
 flag1_after <- sum(df_clean$total_working_years < df_clean$years_at_company,
                    na.rm = TRUE)
 flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
