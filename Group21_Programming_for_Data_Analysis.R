@@ -25,7 +25,7 @@
 # =============================================================================
 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret)
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
 
 message("[OK] All libraries loaded — ready to proceed.")
 
@@ -79,7 +79,7 @@ message("[OK] File loaded — ", nrow(df_raw), " rows x ",
 # =============================================================================
 
 # --- Question 1: What is the size? ---
-cat("\n--- Dataset Dimensions ---\n")
+message("\n--- Dataset Dimensions ---\n")
 cat("Rows    :", nrow(df_raw), "\n")
 cat("Columns :", ncol(df_raw), "\n")
 
@@ -87,14 +87,14 @@ cat("Columns :", ncol(df_raw), "\n")
 # --- Question 2: What is inside? ---
 # str() shows column names AND data types at the same time
 # IMPORTANT -> Watch for: numeric columns showing as "chr" — means dirty values like "1423_"
-cat("\n--- Structure (column names + data types) ---\n")
+message("\n--- Structure (column names + data types) ---\n")
 str(df_raw)
 
 
 # --- Question 3: What does it look like? ---
 # See the actual raw data — most important visual check
 # IMPORTANT -> This is where you spot: "sale", "1423_", "f", "YES" etc.
-cat("\n--- Sample Rows (first 10) ---\n")
+message("\n--- Sample Rows (first 10) ---\n")
 print(head(df_raw, 10))
 
 
@@ -103,26 +103,26 @@ print(head(df_raw, 10))
 # 4a. Missing Values
 # Counts NAs per column — sorted from most missing to least
 # Only shows columns that have missing values — skips clean ones
-cat("\n--- Missing Values Per Column ---\n")
+message("\n--- Missing Values Per Column ---\n")
 missing_raw <- colSums(is.na(df_raw))
 missing_raw <- sort(missing_raw[missing_raw > 0], decreasing = TRUE)
 if (length(missing_raw) == 0) {
-  cat("No missing values found.\n")
+  message("No missing values found.\n")
 } else {
   print(missing_raw)
-  cat("Total missing cells:", sum(missing_raw), "\n")
+  message("Total missing cells: ", sum(missing_raw), "\n")
 }
 
 # 4b. Duplicate Rows
 # Finds rows that are exact copies of another row
-cat("\n--- Duplicate Rows ---\n")
+message("\n--- Duplicate Rows ---\n")
 dup_count <- sum(duplicated(df_raw))
 if (dup_count > 0) {
-  cat("Duplicates found    :", dup_count, "\n")
-  cat("Rows after removal  :", nrow(df_raw) - dup_count, "\n")
-  cat(">>> ACTION: Remove duplicates in Section 5 using distinct()\n")
+  message("Duplicates found    : ", dup_count, "\n")
+  message("Rows after removal  : ", nrow(df_raw) - dup_count, "\n")
+  message(">>> ACTION: Remove duplicates in Section 5 using distinct()\n")
 } else {
-  cat("Duplicates found    : 0 — no action needed.\n")
+  message("Duplicates found    : 0 — no action needed.\n")
 }
 
 
@@ -131,14 +131,14 @@ if (dup_count > 0) {
 # 5a. Target Variable Distribution
 # Count how many stayed vs left BEFORE cleaning
 # useNA = "always" forces NA to show even if there are none
-cat("\n--- Attrition Distribution (raw) ---\n")
+message("\n--- Attrition Distribution (raw) ---\n")
 print(table(df_raw$Attrition, useNA = "always"))
 
 # 5b. Unique Values in ALL Categorical Columns
 # Auto-detects every text column — no need to hardcode names (As stated in Question 2)
 # Reveals ALL inconsistent formats that need fixing in Section 5
 # sort() puts similar values next to each other — makes duplicates obvious
-cat("\n--- Unique Values in Categorical Columns ---\n")
+message("\n--- Unique Values in Categorical Columns ---\n")
 
 char_cols <- df_raw %>%
   select(where(is.character)) %>%   # find all text columns automatically
@@ -153,7 +153,7 @@ for (col in char_cols) {
 # Auto-detects every numeric column — no hardcoding needed
 # Note: dirty columns like "1423_" will NOT appear here (stored as text)
 # Missing numeric columns = they have dirty values = need clean_numeric()
-cat("\n--- Numeric Column Summary ---\n")
+message("\n--- Numeric Column Summary ---\n")
 
 num_cols <- df_raw %>%
   select(where(is.numeric)) %>%   # find all numeric columns automatically
@@ -177,7 +177,7 @@ near_zero_variance_feature <- nearZeroVar(df_raw, saveMetrics = TRUE) # saveMetr
 print(near_zero_variance_feature[near_zero_variance_feature$zeroVar == TRUE, ])
 
 
-cat("\n[OK] Exploration complete — review output above then proceed to Section 4.\n")
+message("\n[OK] Exploration complete — review output above then proceed to Section 4.\n")
 
 
 # =============================================================================
@@ -211,11 +211,6 @@ LBL_WLB    <- c("Bad", "Good", "Better", "Best")                            # wo
 LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")                  # performance rating
 LBL_EDU    <- c("Below College", "College", "Bachelor", "Master", "Doctor") # education level
 
-# --- Validation Behaviour ---
-# TRUE  = remove impossible rows from dataset
-# FALSE = keep them but mark with a warning column
-FLAG_AND_REMOVE <- TRUE
-
 message("[OK] Configuration set — proceeding to cleaning.")
 
 
@@ -233,7 +228,7 @@ message("[OK] Configuration set — proceeding to cleaning.")
 # -----------------------------------------------------------------------------
 df <- df_raw %>% clean_names()
 
-cat("\n[OK] 5.1 Column names standardised.\n")
+message("\n[OK] 5.1 Column names standardised.\n")
 print(names(df))
 
 
@@ -246,9 +241,9 @@ bad_cols <- nearZeroVar(df)
 
 if (length(bad_cols) > 0) {
   df <- df[, -bad_cols]
-  cat("\n[OK] 5.2 Removed", length(bad_cols), "zero-variance columns.\n")
+  message("\n[OK] 5.2 Removed ", length(bad_cols), " zero-variance columns.\n")
 } else {
-  cat("All columns have variance. No removal needed.\n")
+  message("\n[OK] 5.2 All columns have variance. No removal needed.\n")
 }
 
 # -----------------------------------------------------------------------------
@@ -383,7 +378,7 @@ dirty_cols <- names(df)[
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
-cat("\n[OK] 5.4 Cleaned", length(dirty_cols), "dirty numeric columns.\n")
+message("\n[OK] 5.4 Cleaned ", length(dirty_cols), " dirty numeric columns.\n")
 if (length(dirty_cols) > 0) {
   cat("Columns:", paste(dirty_cols, collapse = ", "), "\n")
 }
@@ -397,7 +392,7 @@ if (length(dirty_cols) > 0) {
 # -----------------------------------------------------------------------------
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
-cat("\n[OK] 5.5 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
+message("\n[OK] 5.5 Removed ", rows_before_dedup - nrow(df), " duplicate rows.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -409,9 +404,9 @@ cat("\n[OK] 5.5 Removed", rows_before_dedup - nrow(df), "duplicate rows.\n")
 # -----------------------------------------------------------------------------
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-cat("\n[OK] 5.6 Removed", rows_before_target - nrow(df),
-    "rows with missing Attrition (target variable).\n")
-cat("Rows remaining:", nrow(df), "\n")
+message("\n[OK] 5.6 Removed ", rows_before_target - nrow(df),
+    " rows with missing Attrition (target variable).\n")
+message("Rows remaining: ", nrow(df), "\n")
 
 
 # -----------------------------------------------------------------------------
@@ -435,8 +430,8 @@ df <- df %>%
   )
 
 na_after <- sum(is.na(df))
-cat("\n[OK] 5.7 Imputation complete — filled",
-    na_before - na_after, "missing values.\n")
+message("\n[OK] 5.7 Imputation complete — filled ",
+    na_before - na_after, " missing values.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -479,8 +474,8 @@ cat("[OK] 5.8 Columns converted to labelled factors.\n")
 
 # Rename as clean dataset
 df_clean <- df
-cat("\n[OK] df_clean is ready —", nrow(df_clean), "rows x",
-    ncol(df_clean), "columns.\n")
+message("\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
+    ncol(df_clean), " columns.\n")
 
 
 # =============================================================================
@@ -491,13 +486,13 @@ cat("\n[OK] df_clean is ready —", nrow(df_clean), "rows x",
 
 # --- 6.1 Missing Values After Cleaning ---
 # Should be 0 for all columns after imputation in 5.6
-cat("\n--- 6.1 Missing Values After Cleaning ---\n")
+message("\n--- 6.1 Missing Values After Cleaning ---\n")
 missing_clean <- colSums(is.na(df_clean))
 missing_clean <- sort(missing_clean[missing_clean > 0], decreasing = TRUE)
 if (length(missing_clean) == 0) {
-  cat("No missing values remaining — imputation successful.\n")
+  message("\n[OK] 6.1 No missing values remaining — imputation successful.\n")
 } else {
-  cat("WARNING: Some NAs still remain:\n")
+  message("WARNING: Some NAs still remain:\n")
   print(missing_clean)
 }
 
@@ -505,7 +500,7 @@ if (length(missing_clean) == 0) {
 # --- 6.2 Confirm Categorical Cleaning Worked ---
 # Compare with Section 3 — should now show only clean consistent values (Match with dataset_description.txt)
 # Target and Key Demographics
-cat("\n--- 6.2 Cleaned Unique Value ---\n")
+message("\n--- 6.2 Cleaned Unique Value ---\n")
 
 # Target & Basic Info
 cat("Attrition         :"); print(levels(df_clean$attrition))
@@ -534,7 +529,7 @@ cat("Performance Rating:"); print(levels(df_clean$performance_rating))
 # --- 6.3 Confirm Imputation Values Used ---
 # Shows what median value was used to fill NAs per numeric column
 # Useful for your report — state exactly what was imputed
-cat("\n--- 6.3 Median Values Used for Numeric Imputation ---\n")
+message("\n--- 6.3 Median Values Used for Numeric Imputation ---\n")
 df_clean %>%
   select(where(is.numeric)) %>%
   summarise(across(everything(), ~ median(., na.rm = TRUE))) %>%
@@ -544,75 +539,114 @@ df_clean %>%
   print(n = Inf)
 
 
-# --- 6.4 Impossible Logic Flags ---
-# Rows where data is logically impossible — cleaning cannot fix these
-cat("\n--- 6.4 Impossible Logic Flags ---\n")
-flag_impossible <- bind_rows(
-  
-  # Flag 1: Can't have worked at company longer than total career
-  df_clean %>%
-    filter(total_working_years < years_at_company) %>%
-    mutate(flag_reason = "TotalWorkingYears < YearsAtCompany"),
-  
-  # Flag 2: Can't have started working before age 18
-  df_clean %>%
-    filter(age < (total_working_years + 18)) %>%
-    mutate(flag_reason = "Age < TotalWorkingYears + 18"),
-  
-  # Flag 3: Can't be in current role longer than total time at company
-  df_clean %>%
-    filter(years_in_current_role > years_at_company) %>%
-    mutate(flag_reason = "YearsInCurrentRole > YearsAtCompany")
-  
-) %>%
-  select(employee_number, age, total_working_years,
-         years_at_company, years_in_current_role, flag_reason) %>%
-  distinct()
+# --- 6.4 Impossible Logic — Correct by Taking Logical Maximum/Minimum ---
+message("\n--- 6.4 Impossible Logic Correction ---\n")
+# Count before correction
+flag1_count <- sum(df_clean$total_working_years < df_clean$years_at_company,
+                   na.rm = TRUE)
+flag2_count <- sum(df_clean$age < (df_clean$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_count <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
+                   na.rm = TRUE)
 
-cat("Total flagged rows:", nrow(flag_impossible), "\n")
-if (nrow(flag_impossible) > 0) {
-  print(flag_impossible)
-  if (FLAG_AND_REMOVE) {
-    df_clean <- df_clean %>%
-      filter(!employee_number %in% flag_impossible$employee_number)
-    cat("[ACTION] Removed", nrow(flag_impossible), "impossible rows.\n")
-  } else {
-    df_clean <- df_clean %>%
-      mutate(data_flag = ifelse(
-        employee_number %in% flag_impossible$employee_number,
-        "FLAGGED", "OK"
-      ))
-    cat("[ACTION] Rows marked in 'data_flag' column.\n")
-  }
-} else {
-  cat("No impossible rows found.\n")
-}
+total_initial_flags <- flag1_count + flag2_count + flag3_count
+
+cat("Before correction:\n")
+cat("  Flag 1 (TotalWorkingYears < YearsAtCompany)  :", flag1_count, "rows\n")
+cat("  Flag 2 (Age < TotalWorkingYears + 18)        :", flag2_count, "rows\n")
+cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
+cat("Total Impossible Logic:", total_initial_flags,"\n")
+
+# Correct all three in one mutate
+df_clean <- df_clean %>%
+  mutate(
+    
+    # Fix 1: total_working_years must be >= years_at_company
+    # Take the higher value — you must have worked at least
+    # as long as you have been at this company
+    total_working_years = pmax(total_working_years, years_at_company),
+    
+    # Fix 2: total_working_years must be <= age - 18
+    # Take the lower value — cannot have worked before age 18
+    total_working_years = pmin(total_working_years, age - 14),
+    
+    # Fix 3: years_in_current_role must be <= years_at_company
+    # Take the lower value — cannot be in role longer than at company
+    years_in_current_role = pmin(years_in_current_role, years_at_company)
+    
+  )
+
+# Verify all fixed
+flag1_after <- sum(df_clean$total_working_years < df_clean$years_at_company,
+                   na.rm = TRUE)
+flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_after <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
+                   na.rm = TRUE)
+
+cat("\nAfter correction:\n")
+cat("  Flag 1 remaining:", flag1_after, "\n")
+cat("  Flag 2 remaining:", flag2_after, "\n")
+cat("  Flag 3 remaining:", flag3_after, "\n")
+
+# Remove the final 42 irreconcilable rows
+rows_before_final <- nrow(df_clean)
+
+df_clean <- df_clean %>%
+  filter(total_working_years >= years_at_company)
+
+message("\n[ACTION] Removed final ", rows_before_final - nrow(df_clean), 
+    " irreconcilable rows that failed heuristic repair.\n")
+
+# Verify all fixed
+flag1_after <- sum(df_clean$total_working_years < df_clean$years_at_company,
+                   na.rm = TRUE)
+flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_after <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
+                   na.rm = TRUE)
+
+final_removed <- rows_before_final - nrow(df_clean)
+total_corrected <- total_initial_flags - final_removed
+
+cat("\nAfter removal:\n")
+cat("  Flag 1 remaining:", flag1_after, "\n")
+cat("  Flag 2 remaining:", flag2_after, "\n")
+cat("  Flag 3 remaining:", flag3_after, "\n")
+
+message("\n[OK] 6.4 All impossible logic corrected.
+        \nTotal correction: ", total_corrected,
+        "\nTotal removal: ", final_removed,
+        "\nLeftover dataset: ", nrow(df_clean), " x ", ncol(df_clean), "\n")
 
 
 # --- 6.5 Final Data Health Summary ---
 cat("\n--- 6.5 Final Data Health Summary ---\n")
-cat(sprintf("  %-30s %d\n",    "Raw rows loaded:",         nrow(df_raw)))
-cat(sprintf("  %-30s %d\n",    "Duplicates removed:",      rows_before_dedup - nrow(df)))
-cat(sprintf("  %-30s %d\n",    "Missing target removed:",  rows_before_target - nrow(df)))
-cat(sprintf("  %-30s %d\n",    "NAs imputed:",             na_before - na_after))
-cat(sprintf("  %-30s %d\n",    "Impossible rows removed:", nrow(flag_impossible)))
-cat(sprintf("  %-30s %d\n",    "Final clean rows:",        nrow(df_clean)))
-cat(sprintf("  %-30s %d\n",    "Remaining NAs:",           sum(is.na(df_clean))))
-cat(sprintf("  %-30s %d\n",    "Stayed (No):",             sum(df_clean$attrition == "No")))
-cat(sprintf("  %-30s %d\n",    "Left (Yes):",              sum(df_clean$attrition == "Yes")))
-cat(sprintf("  %-30s %.2f%%\n","Attrition Rate:",          sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
+cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
+cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      rows_before_dedup - nrow(df)))
+cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - nrow(df)))
+cat(sprintf("  %-40s %d\n",    "NAs imputed:",                             na_before - na_after))
+cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",   length(bad_cols)))
+cat(sprintf("  %-40s %d\n",    "Impossible rows corrected:",               total_corrected))
+cat(sprintf("  %-40s %d\n",    "Impossible rows removed:",                 final_removed))
+cat(sprintf("  %-40s %d\n",    "Final clean rows:",                        nrow(df_clean)))
+cat(sprintf("  %-40s %d\n",    "Final clean cols:",                        ncol(df_clean)))
+cat(sprintf("  %-40s %d\n",    "Remaining NAs:",                           sum(is.na(df_clean))))
+cat(sprintf("  %-40s %d\n",    "Stayed (No):",                             sum(df_clean$attrition == "No")))
+cat(sprintf("  %-40s %d\n",    "Left (Yes):",                              sum(df_clean$attrition == "Yes")))
+cat(sprintf("  %-40s %.2f%%\n","Attrition Rate:",                          sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
 
 # Export clean dataset
 write.csv(df_clean, OUTPUT_CSV, row.names = FALSE)
-cat("\n[OK] Clean dataset saved to:", OUTPUT_CSV, "\n")
+message("\n[OK] Clean dataset saved to:", OUTPUT_CSV, "\n")
 
 # We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
 # columnar format that allows for high-speed I/O and better compression.
 write_parquet(df_clean, OUTPUT_PARQUET)
-cat("\n[OK] Clean dataset saved to:", OUTPUT_PARQUET, "\n")
+message("\n[OK] Clean dataset saved to:", OUTPUT_PARQUET, "\n")
 
-cat("\n[OK] Clean data saved as CSV and Optimized Parquet.")
-cat("\n>>> BASE SCRIPT COMPLETE — clean_parquet is ready for analysis.\n")
+message("\n[OK] Clean data saved as CSV and Optimized Parquet.")
+message("\n>>> BASE SCRIPT COMPLETE — clean_parquet is ready for analysis.\n")
 
 # =============================================================================
 # SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
