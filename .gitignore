@@ -6,9 +6,11 @@
 # Example: Filter out data files if they are huge
 *.csv
 *.rds
+*.parquet
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
 # Session data
 .Rapp.history
