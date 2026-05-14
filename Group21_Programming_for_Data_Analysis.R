@@ -125,6 +125,38 @@ if (dup_count > 0) {
   message("Duplicates found    : 0 — no action needed.\n")
 }
 
+# 4c. Duplicate Employee IDs
+# Check if the same employee appears more than once (not exact row duplicates)
+message("\n--- Duplicate Employee IDs ---\n")
+
+if ("EmployeeNumber" %in% names(df_raw)) {
+  # Extract only non-NA IDs for the duplicate check
+  valid_ids <- df_raw$EmployeeNumber[!is.na(df_raw$EmployeeNumber)]
+  dup_ids <- sum(duplicated(valid_ids))
+  
+  if (dup_ids > 0) {
+    message("WARNING: Found ", dup_ids, " duplicated Employee IDs!\n")
+    message(">>> ACTION: Investigate if these are exact row duplicates or conflicting records.\n")
+    
+    # Extract the duplicated IDs (excluding NAs)
+    repeated_ids <- valid_ids[duplicated(valid_ids)]
+    
+    # Get all rows that have these repeated IDs
+    conflict_rows <- df_raw[df_raw$EmployeeNumber %in% repeated_ids, ]
+    conflict_rows <- conflict_rows[order(conflict_rows$EmployeeNumber), ] # Sort so pairs are next to each other
+    
+    message("\n--- Rows with Repeated IDs ---\n")
+    # Print the ID and a few key columns so it fits in the console
+    cols_to_show <- intersect(c("EmployeeNumber", "Attrition", "Age", "Department", "JobRole"), names(df_raw))
+    print(conflict_rows[, cols_to_show])
+    message("\n")
+    
+  } else {
+    message("Duplicate IDs found : 0 — all employees are unique.\n")
+  }
+} else {
+  message("EmployeeNumber column not found.\n")
+}
 
 # --- Question 5: What are the actual values? ---
 
