@@ -237,11 +237,12 @@ print(names(df))
 # Problem (Q6)
 # -----------------------------------------------------------------------------
 
-bad_cols <- nearZeroVar(df)
+nzv_metrics <- nearZeroVar(df, saveMetrics = TRUE)
+zero_var_cols <- which(nzv_metrics$zeroVar == TRUE)
 
-if (length(bad_cols) > 0) {
-  df <- df[, -bad_cols]
-  message("\n[OK] 5.2 Removed ", length(bad_cols), " zero-variance columns.\n")
+if (length(zero_var_cols) > 0) {
+  df <- df[, -zero_var_cols]
+  message("\n[OK] 5.2 Removed ", length(zero_var_cols), " zero-variance columns.\n")
 } else {
   message("\n[OK] 5.2 All columns have variance. No removal needed.\n")
 }
