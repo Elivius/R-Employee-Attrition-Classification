@@ -473,6 +473,89 @@ df <- df %>%
 
 cat("[OK] 5.8 Columns converted to labelled factors.\n")
 
+# -----------------------------------------------------------------------------
+# 5.9 Impossible Logic Correction — Correct by Taking Logical Maximum/Minimum
+# -----------------------------------------------------------------------------
+
+message("\n--- 5.9 Impossible Logic Correction ---\n")
+# Count before correction
+flag1_count <- sum(df$total_working_years < df$years_at_company,
+                   na.rm = TRUE)
+flag2_count <- sum(df$age < (df$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_count <- sum(df$years_in_current_role > df$years_at_company,
+                   na.rm = TRUE)
+
+total_initial_flags <- flag1_count + flag2_count + flag3_count
+
+cat("Before correction:\n")
+cat("  Flag 1 (TotalWorkingYears < YearsAtCompany)  :", flag1_count, "rows\n")
+cat("  Flag 2 (Age < TotalWorkingYears + 14)        :", flag2_count, "rows\n")
+cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
+cat("Total Impossible Logic:", total_initial_flags,"\n")
+
+# Correct all three in one mutate
+df <- df %>%
+  mutate(
+    
+    # Fix 1: total_working_years must be >= years_at_company
+    # Take the higher value — you must have worked at least
+    # as long as you have been at this company
+    total_working_years = pmax(total_working_years, years_at_company),
+    
+    # Fix 2: total_working_years must be <= age - 14
+    # Take the lower value — cannot have worked before age 14
+    total_working_years = pmin(total_working_years, age - 14),
+    
+    # Fix 3: years_in_current_role must be <= years_at_company
+    # Take the lower value — cannot be in role longer than at company
+    years_in_current_role = pmin(years_in_current_role, years_at_company)
+    
+  )
+
+# Verify all fixed
+flag1_after <- sum(df$total_working_years < df$years_at_company,
+                   na.rm = TRUE)
+flag2_after <- sum(df$age < (df$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_after <- sum(df$years_in_current_role > df$years_at_company,
+                   na.rm = TRUE)
+
+cat("\nAfter correction:\n")
+cat("  Flag 1 remaining:", flag1_after, "\n")
+cat("  Flag 2 remaining:", flag2_after, "\n")
+cat("  Flag 3 remaining:", flag3_after, "\n")
+
+# Remove the final 42 irreconcilable rows
+rows_before_impossible_correction <- nrow(df)
+
+df <- df %>%
+  filter(total_working_years >= years_at_company)
+
+message("\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df), 
+    " irreconcilable rows that failed heuristic repair.\n")
+
+# Verify all fixed - after removal
+flag1_after <- sum(df$total_working_years < df$years_at_company,
+                   na.rm = TRUE)
+flag2_after <- sum(df$age < (df$total_working_years + 14),
+                   na.rm = TRUE)
+flag3_after <- sum(df$years_in_current_role > df$years_at_company,
+                   na.rm = TRUE)
+
+final_removed <- rows_before_impossible_correction - nrow(df)
+total_corrected <- total_initial_flags - final_removed
+
+cat("\nAfter removal:\n")
+cat("  Flag 1 remaining:", flag1_after, "\n")
+cat("  Flag 2 remaining:", flag2_after, "\n")
+cat("  Flag 3 remaining:", flag3_after, "\n")
+
+message("\n[OK] 5.9 All impossible logic corrected.
+        \nTotal correction: ", total_corrected,
+        "\nTotal removal: ", final_removed,
+        "\nLeftover dataset: ", nrow(df), " x ", ncol(df), "\n")
+
 # Rename as clean dataset
 df_clean <- df
 message("\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
@@ -538,87 +621,6 @@ df_clean %>%
                names_to  = "column",
                values_to = "median_used") %>%
   print(n = Inf)
-
-
-# --- 6.4 Impossible Logic — Correct by Taking Logical Maximum/Minimum ---
-message("\n--- 6.4 Impossible Logic Correction ---\n")
-# Count before correction
-flag1_count <- sum(df_clean$total_working_years < df_clean$years_at_company,
-                   na.rm = TRUE)
-flag2_count <- sum(df_clean$age < (df_clean$total_working_years + 14),
-                   na.rm = TRUE)
-flag3_count <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
-                   na.rm = TRUE)
-
-total_initial_flags <- flag1_count + flag2_count + flag3_count
-
-cat("Before correction:\n")
-cat("  Flag 1 (TotalWorkingYears < YearsAtCompany)  :", flag1_count, "rows\n")
-cat("  Flag 2 (Age < TotalWorkingYears + 14)        :", flag2_count, "rows\n")
-cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
-cat("Total Impossible Logic:", total_initial_flags,"\n")
-
-# Correct all three in one mutate
-df_clean <- df_clean %>%
-  mutate(
-    
-    # Fix 1: total_working_years must be >= years_at_company
-    # Take the higher value — you must have worked at least
-    # as long as you have been at this company
-    total_working_years = pmax(total_working_years, years_at_company),
-    
-    # Fix 2: total_working_years must be <= age - 14
-    # Take the lower value — cannot have worked before age 14
-    total_working_years = pmin(total_working_years, age - 14),
-    
-    # Fix 3: years_in_current_role must be <= years_at_company
-    # Take the lower value — cannot be in role longer than at company
-    years_in_current_role = pmin(years_in_current_role, years_at_company)
-    
-  )
-
-# Verify all fixed
-flag1_after <- sum(df_clean$total_working_years < df_clean$years_at_company,
-                   na.rm = TRUE)
-flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
-                   na.rm = TRUE)
-flag3_after <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
-                   na.rm = TRUE)
-
-cat("\nAfter correction:\n")
-cat("  Flag 1 remaining:", flag1_after, "\n")
-cat("  Flag 2 remaining:", flag2_after, "\n")
-cat("  Flag 3 remaining:", flag3_after, "\n")
-
-# Remove the final 42 irreconcilable rows
-rows_before_impossible_correction <- nrow(df_clean)
-
-df_clean <- df_clean %>%
-  filter(total_working_years >= years_at_company)
-
-message("\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df_clean), 
-    " irreconcilable rows that failed heuristic repair.\n")
-
-# Verify all fixed - after removal
-flag1_after <- sum(df_clean$total_working_years < df_clean$years_at_company,
-                   na.rm = TRUE)
-flag2_after <- sum(df_clean$age < (df_clean$total_working_years + 14),
-                   na.rm = TRUE)
-flag3_after <- sum(df_clean$years_in_current_role > df_clean$years_at_company,
-                   na.rm = TRUE)
-
-final_removed <- rows_before_impossible_correction - nrow(df_clean)
-total_corrected <- total_initial_flags - final_removed
-
-cat("\nAfter removal:\n")
-cat("  Flag 1 remaining:", flag1_after, "\n")
-cat("  Flag 2 remaining:", flag2_after, "\n")
-cat("  Flag 3 remaining:", flag3_after, "\n")
-
-message("\n[OK] 6.4 All impossible logic corrected.
-        \nTotal correction: ", total_corrected,
-        "\nTotal removal: ", final_removed,
-        "\nLeftover dataset: ", nrow(df_clean), " x ", ncol(df_clean), "\n")
 
 
 # --- 6.5 Final Data Health Summary ---
