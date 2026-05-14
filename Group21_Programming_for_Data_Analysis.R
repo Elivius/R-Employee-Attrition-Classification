@@ -63,8 +63,7 @@ if (!file.exists(raw_file)) {
 df_raw <- read.csv(raw_file, stringsAsFactors = FALSE,
                    na.strings = c("", "NA", "N/A", "na", "n/a"))
 
-message("[OK] File loaded — ", nrow(df_raw), " rows x ",
-        ncol(df_raw), " columns")
+message("[OK] File loaded — ", nrow(df_raw), " rows x ", ncol(df_raw), " columns")
 
 # =============================================================================
 # SECTION 3: RAW DATA EXPLORATION
@@ -79,7 +78,7 @@ message("[OK] File loaded — ", nrow(df_raw), " rows x ",
 # =============================================================================
 
 # --- Question 1: What is the size? ---
-message("\n--- Dataset Dimensions ---\n")
+message("\n--- Question 1: Dataset Dimensions ---")
 cat("Rows    :", nrow(df_raw), "\n")
 cat("Columns :", ncol(df_raw), "\n")
 
@@ -87,14 +86,14 @@ cat("Columns :", ncol(df_raw), "\n")
 # --- Question 2: What is inside? ---
 # str() shows column names AND data types at the same time
 # IMPORTANT -> Watch for: numeric columns showing as "chr" — means dirty values like "1423_"
-message("\n--- Structure (column names + data types) ---\n")
+message("\n--- Question 2: Structure (column names + data types) ---")
 str(df_raw)
 
 
 # --- Question 3: What does it look like? ---
 # See the actual raw data — most important visual check
 # IMPORTANT -> This is where you spot: "sale", "1423_", "f", "YES" etc.
-message("\n--- Sample Rows (first 10) ---\n")
+message("\n--- Question 3: Sample Rows (first 10) ---")
 print(head(df_raw, 10))
 
 
@@ -103,31 +102,31 @@ print(head(df_raw, 10))
 # 4a. Missing Values
 # Counts NAs per column — sorted from most missing to least
 # Only shows columns that have missing values — skips clean ones
-message("\n--- Missing Values Per Column ---\n")
+message("\n--- Question 4a: Missing Values Per Column ---")
 missing_raw <- colSums(is.na(df_raw))
 missing_raw <- sort(missing_raw[missing_raw > 0], decreasing = TRUE)
 if (length(missing_raw) == 0) {
-  message("No missing values found.\n")
+  cat("No missing values found.\n")
 } else {
   print(missing_raw)
-  message("Total missing cells: ", sum(missing_raw), "\n")
+  cat("Total missing cells:", sum(missing_raw), "\n")
 }
 
 # 4b. Duplicate Rows
 # Finds rows that are exact copies of another row
-message("\n--- Duplicate Rows ---\n")
+message("\n--- Question 4b: Duplicate Rows ---")
 dup_count <- sum(duplicated(df_raw))
 if (dup_count > 0) {
-  message("Duplicates found    : ", dup_count, "\n")
-  message("Rows after removal  : ", nrow(df_raw) - dup_count, "\n")
-  message(">>> ACTION: Remove duplicates in Section 5 using distinct()\n")
+  cat("Duplicates found    :", dup_count, "\n")
+  cat("Rows after removal  :", nrow(df_raw) - dup_count, "\n")
+  cat(">>> ACTION: Remove duplicates in Section 5 using distinct()\n")
 } else {
-  message("Duplicates found    : 0 — no action needed.\n")
+  cat("Duplicates found    : 0 — no action needed.\n")
 }
 
 # 4c. Duplicate Employee IDs
 # Check if the same employee appears more than once (not exact row duplicates)
-message("\n--- Duplicate Employee IDs ---\n")
+message("\n--- Question 4c: Duplicate Employee IDs ---")
 
 if ("EmployeeNumber" %in% names(df_raw)) {
   # Extract only non-NA IDs for the duplicate check
@@ -135,8 +134,8 @@ if ("EmployeeNumber" %in% names(df_raw)) {
   dup_ids <- sum(duplicated(valid_ids))
   
   if (dup_ids > 0) {
-    message("WARNING: Found ", dup_ids, " duplicated Employee IDs!\n")
-    message(">>> ACTION: Investigate if these are exact row duplicates or conflicting records.\n")
+    message("WARNING: Found ", dup_ids, " duplicated Employee IDs!")
+    cat(">>> ACTION: Investigate if these are exact row duplicates or conflicting records.\n")
     
     # Extract the duplicated IDs (excluding NAs)
     repeated_ids <- valid_ids[duplicated(valid_ids)]
@@ -145,17 +144,17 @@ if ("EmployeeNumber" %in% names(df_raw)) {
     conflict_rows <- df_raw[df_raw$EmployeeNumber %in% repeated_ids, ]
     conflict_rows <- conflict_rows[order(conflict_rows$EmployeeNumber), ] # Sort so pairs are next to each other
     
-    message("\n--- Rows with Repeated IDs ---\n")
+    message("\n--- Rows with Repeated IDs ---")
     # Print the ID and a few key columns so it fits in the console
     cols_to_show <- intersect(c("EmployeeNumber", "Attrition", "Age", "Department", "JobRole"), names(df_raw))
     print(conflict_rows[, cols_to_show])
-    message("\n")
+    cat("\n")
     
   } else {
-    message("Duplicate IDs found : 0 — all employees are unique.\n")
+    cat("Duplicate IDs found : 0 — all employees are unique.\n")
   }
 } else {
-  message("EmployeeNumber column not found.\n")
+  cat("EmployeeNumber column not found.\n")
 }
 
 # --- Question 5: What are the actual values? ---
@@ -163,14 +162,14 @@ if ("EmployeeNumber" %in% names(df_raw)) {
 # 5a. Target Variable Distribution
 # Count how many stayed vs left BEFORE cleaning
 # useNA = "always" forces NA to show even if there are none
-message("\n--- Attrition Distribution (raw) ---\n")
+message("\n--- Question 5a: Attrition Distribution (raw) ---")
 print(table(df_raw$Attrition, useNA = "always"))
 
 # 5b. Unique Values in ALL Categorical Columns
 # Auto-detects every text column — no need to hardcode names (As stated in Question 2)
 # Reveals ALL inconsistent formats that need fixing in Section 5
 # sort() puts similar values next to each other — makes duplicates obvious
-message("\n--- Unique Values in Categorical Columns ---\n")
+message("\n--- Question 5b: Unique Values in Categorical Columns ---")
 
 char_cols <- df_raw %>%
   select(where(is.character)) %>%   # find all text columns automatically
@@ -185,7 +184,7 @@ for (col in char_cols) {
 # Auto-detects every numeric column — no hardcoding needed
 # Note: dirty columns like "1423_" will NOT appear here (stored as text)
 # Missing numeric columns = they have dirty values = need clean_numeric()
-message("\n--- Numeric Column Summary ---\n")
+message("\n--- Question 5c: Numeric Column Summary ---")
 
 num_cols <- df_raw %>%
   select(where(is.numeric)) %>%   # find all numeric columns automatically
@@ -209,7 +208,7 @@ near_zero_variance_feature <- nearZeroVar(df_raw, saveMetrics = TRUE) # saveMetr
 print(near_zero_variance_feature[near_zero_variance_feature$zeroVar == TRUE, ])
 
 
-message("\n[OK] Exploration complete — review output above then proceed to Section 4.\n")
+message("\n[OK] Exploration complete — review output above then proceed to Section 4.")
 
 
 # =============================================================================
@@ -260,8 +259,9 @@ message("[OK] Configuration set — proceeding to cleaning.")
 # -----------------------------------------------------------------------------
 df <- df_raw %>% clean_names()
 
-message("\n[OK] 5.1 Column names standardised.\n")
+message("\n--- 5.1 Standardise Column Names ---")
 print(names(df))
+message("[OK] 5.1 Column names standardised.")
 
 # -----------------------------------------------------------------------------
 # 5.2 Remove Zero Variance Features
@@ -270,11 +270,12 @@ print(names(df))
 nzv_metrics <- nearZeroVar(df, saveMetrics = TRUE)
 zero_var_cols <- which(nzv_metrics$zeroVar == TRUE)
 
+message("\n--- 5.2 Remove Zero Variance Features ---")
 if (length(zero_var_cols) > 0) {
   df <- df[, -zero_var_cols]
-  message("\n[OK] 5.2 Removed ", length(zero_var_cols), " zero-variance columns.\n")
+  message("[OK] 5.2 Removed ", length(zero_var_cols), " zero-variance columns.")
 } else {
-  message("\n[OK] 5.2 All columns have variance. No removal needed.\n")
+  message("[OK] 5.2 All columns have variance. No removal needed.")
 }
 
 
@@ -282,11 +283,12 @@ if (length(zero_var_cols) > 0) {
 # 5.3 Employee ID Features
 # Prevent Overfitting
 # -----------------------------------------------------------------------------
+message("\n--- 5.3 Remove Employee ID Feature ---")
 if ("employee_number" %in% names(df)) {
   df <- df %>% select(-employee_number)
-  message("[OK] 5.3 Removed ID column: employee_number\n")
+  message("[OK] 5.3 Removed ID column: employee_number")
 } else {
-  message("[OK] 5.3 No ID column found to remove.\n")
+  message("[OK] 5.3 No ID column found to remove.")
 }
 
 # -----------------------------------------------------------------------------
@@ -386,7 +388,8 @@ df <- df %>%
     )
   )
 
-cat("[OK] 5.4 Categorical columns standardised.\n")
+message("\n--- 5.4 Universal Categorical Normalization ---")
+message("[OK] 5.4 Categorical columns standardised.")
 
 
 # -----------------------------------------------------------------------------
@@ -422,9 +425,10 @@ dirty_cols <- names(df)[
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
-message("\n[OK] 5.5 Cleaned ", length(dirty_cols), " dirty numeric columns.\n")
+message("\n--- 5.5 Clean Dirty Numeric Columns ---")
+message("[OK] 5.5 Cleaned ", length(dirty_cols), " dirty numeric columns.")
 if (length(dirty_cols) > 0) {
-  cat("Columns:", paste(dirty_cols, collapse = ", "), "\n")
+  cat("  Columns:", paste(dirty_cols, collapse = ", "), "\n")
 }
 
 
@@ -438,7 +442,8 @@ rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
 
 dedup_removed <- rows_before_dedup - nrow(df)
-message("\n[OK] 5.6 Removed ", dedup_removed, " duplicate rows.\n")
+message("\n--- 5.6 Remove Duplicate Rows ---")
+message("[OK] 5.6 Removed ", dedup_removed, " duplicate rows.")
 
 
 # -----------------------------------------------------------------------------
@@ -450,9 +455,10 @@ message("\n[OK] 5.6 Removed ", dedup_removed, " duplicate rows.\n")
 # -----------------------------------------------------------------------------
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-message("\n[OK] 5.7 Removed ", rows_before_target - nrow(df),
-    " rows with missing Attrition (target variable).\n")
-message("Rows remaining: ", nrow(df), "\n")
+message("\n--- 5.7 Remove Rows With Missing Target ---")
+message("[OK] 5.7 Removed ", rows_before_target - nrow(df),
+    " rows with missing Attrition (target variable).")
+cat("  Rows remaining:", nrow(df), "\n")
 
 
 # -----------------------------------------------------------------------------
@@ -485,8 +491,9 @@ df <- df %>%
   )
 
 na_after <- sum(is.na(df))
-message("\n[OK] 5.8 Imputation complete — filled ",
-    na_before - na_after, " missing values.\n")
+message("\n--- 5.8 Impute Remaining Missing Values ---")
+message("[OK] 5.8 Imputation complete — filled ",
+    na_before - na_after, " missing values.")
 
 
 # -----------------------------------------------------------------------------
@@ -525,13 +532,14 @@ df <- df %>%
     job_role                  = factor(job_role)
   )
 
-cat("[OK] 5.9 Columns converted to labelled factors.\n")
+message("\n--- 5.9 Convert to Labelled Factors ---")
+message("[OK] 5.9 Columns converted to labelled factors.")
 
 # -----------------------------------------------------------------------------
 # 5.10 Impossible Logic Correction — Correct by Taking Logical Maximum/Minimum
 # -----------------------------------------------------------------------------
 
-message("\n--- 5.10 Impossible Logic Correction ---\n")
+message("\n--- 5.10 Impossible Logic Correction ---")
 # Count before correction
 flag1_count <- sum(df$total_working_years < df$years_at_company,
                    na.rm = TRUE)
@@ -590,7 +598,7 @@ df <- df %>%
   filter(total_working_years >= years_at_company)
 
 message("\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df), 
-    " irreconcilable rows that failed heuristic repair.\n")
+    " irreconcilable rows that failed heuristic repair.")
 
 # Verify all fixed - after removal
 flag1_after <- sum(df$total_working_years < df$years_at_company,
@@ -608,15 +616,15 @@ cat("  Flag 1 remaining:", flag1_after, "\n")
 cat("  Flag 2 remaining:", flag2_after, "\n")
 cat("  Flag 3 remaining:", flag3_after, "\n")
 
-message("\n[OK] 5.10 All impossible logic corrected.
-        \nTotal correction: ", total_corrected,
-        "\nTotal removal: ", final_removed,
-        "\nLeftover dataset: ", nrow(df), " x ", ncol(df), "\n")
+message("\n[OK] 5.10 All impossible logic corrected.")
+cat("  Total correction:", total_corrected, "\n")
+cat("  Total removal:", final_removed, "\n")
+cat("  Leftover dataset:", nrow(df), "x", ncol(df), "\n")
 
 # Rename as clean dataset
 df_clean <- df
 message("\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
-    ncol(df_clean), " columns.\n")
+    ncol(df_clean), " columns.")
 
 
 # =============================================================================
@@ -627,13 +635,13 @@ message("\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
 
 # --- 6.1 Missing Values After Cleaning ---
 # Should be 0 for all columns after imputation in 5.6
-message("\n--- 6.1 Missing Values After Cleaning ---\n")
+message("\n--- 6.1 Missing Values After Cleaning ---")
 missing_clean <- colSums(is.na(df_clean))
 missing_clean <- sort(missing_clean[missing_clean > 0], decreasing = TRUE)
 if (length(missing_clean) == 0) {
-  message("\n[OK] 6.1 No missing values remaining — imputation successful.\n")
+  message("[OK] 6.1 No missing values remaining — imputation successful.")
 } else {
-  message("WARNING: Some NAs still remain:\n")
+  message("WARNING: Some NAs still remain:")
   print(missing_clean)
 }
 
@@ -641,7 +649,7 @@ if (length(missing_clean) == 0) {
 # --- 6.2 Confirm Categorical Cleaning Worked ---
 # Compare with Section 3 — should now show only clean consistent values (Match with dataset_description.txt)
 # Target and Key Demographics
-message("\n--- 6.2 Cleaned Unique Value ---\n")
+message("\n--- 6.2 Cleaned Unique Values ---")
 
 # Target & Basic Info
 cat("Attrition         :"); print(levels(df_clean$attrition))
@@ -670,7 +678,7 @@ cat("Performance Rating:"); print(levels(df_clean$performance_rating))
 # --- 6.3 Confirm Imputation Values Used ---
 # Shows what median value was used to fill NAs per numeric column
 # Useful for your report — state exactly what was imputed
-message("\n--- 6.3 Median Values Used for Numeric Imputation ---\n")
+message("\n--- 6.3 Median Values Used for Numeric Imputation ---")
 df_clean %>%
   select(where(is.numeric)) %>%
   summarise(across(everything(), ~ median(., na.rm = TRUE))) %>%
@@ -698,15 +706,15 @@ cat(sprintf("  %-40s %.2f%%\n","Attrition Rate:",                          sum(d
 
 # Export clean dataset
 write.csv(df_clean, OUTPUT_CSV, row.names = FALSE)
-message("\n[OK] Clean dataset saved to:", OUTPUT_CSV, "\n")
+message("\n[OK] Clean dataset saved to: ", OUTPUT_CSV)
 
 # We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
 # columnar format that allows for high-speed I/O and better compression.
 write_parquet(df_clean, OUTPUT_PARQUET)
-message("\n[OK] Clean dataset saved to:", OUTPUT_PARQUET, "\n")
+message("[OK] Clean dataset saved to: ", OUTPUT_PARQUET)
 
-message("\n[OK] Clean data saved as CSV and Optimized Parquet.")
-message("\n>>> BASE SCRIPT COMPLETE — clean_parquet is ready for analysis.\n")
+message("[OK] Clean data saved as CSV and Optimized Parquet.")
+message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 
 # =============================================================================
 # SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
