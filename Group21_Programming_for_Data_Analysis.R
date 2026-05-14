@@ -720,3 +720,20 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
 # Each group member writes their assigned objective below this line
 # =============================================================================
+
+#Section 7.1 Objective 1: Compensation
+#Name: Joshua Yeo Jing Hao TP077315
+
+#Theme Settings
+theme_comp <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle    = element_text(size = 11, hjust = 0.5, color = "grey50"),
+    axis.title       = element_text(face = "bold"),
+    legend.position  = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+# Colour mapping — blue = stayed, red = left
+comp_colors <- c("No" = "#2196F3", "Yes" = "#F44336")
