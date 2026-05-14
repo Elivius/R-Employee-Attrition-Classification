@@ -325,7 +325,7 @@ df <- df %>%
         c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently")  ~ "Travel Frequently",
       business_travel %in%
         c("non-travel", "non_travel", "non", "nontravel", "nil", "no travel", "non travel", "none") ~ "No Travel",
-      TRUE ~ NA_character_
+      TRUE                                                                                          ~ NA_character_
     ),
     
     # Department
@@ -334,7 +334,7 @@ df <- df %>%
       department %in% c("sales", "sale")                                                            ~ "Sales",
       department %in% c("r&d", "research & development", "research and development", "rd", "r & d") ~ "Research & Development",
       department %in% c("hr", "h&r", "human resources", "human resource")                           ~ "Human Resources",
-      TRUE ~ NA_character_
+      TRUE                                                                                          ~ NA_character_
     ),
     
     # Education Field
@@ -354,7 +354,7 @@ df <- df %>%
     gender = case_when(
       gender %in% c("f", "female") ~ "Female",
       gender %in% c("m", "male")   ~ "Male",
-      TRUE ~ NA_character_
+      TRUE                          ~ NA_character_
     ),
     
     # Job Role
@@ -386,7 +386,7 @@ df <- df %>%
     over_time = case_when(
       over_time %in% c("yes", "1") ~ "Yes",
       over_time %in% c("no",  "0") ~ "No",
-      TRUE ~ NA_character_
+      TRUE                          ~ NA_character_
     )
   )
 message("[OK] 5.4 Categorical columns standardised.")
