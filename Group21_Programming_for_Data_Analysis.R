@@ -61,7 +61,7 @@ if (!file.exists(raw_file)) {
 # stringsAsFactors = FALSE -> keeps text as plain text, not auto-converted
 # na.strings -> tells R which values to treat as missing (NA)
 df_raw <- read.csv(raw_file, stringsAsFactors = FALSE,
-                   na.strings = c("", "NA", "N/A", "na", "n/a", "nil", "Nil", "NIL", "null", "NULL", "none", "None"))
+                   na.strings = c("", "NA", "N/A", "na", "n/a"))
 
 message("[OK] File loaded — ", nrow(df_raw), " rows x ",
         ncol(df_raw), " columns")
