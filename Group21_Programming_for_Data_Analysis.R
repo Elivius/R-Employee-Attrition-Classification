@@ -358,18 +358,19 @@ df <- df %>%
     ),
     
     # Job Role
-    # Found in Section 3: "rep" vs "representative", "exe" vs "executive"
+    # Found in Section 3: abbreviations ("hr", "sales rep", "sales exe"),
+    # truncations ("manufacture director") and full names mixed together
     job_role = case_when(
-      str_detect(job_role, "healthcare") ~ "Healthcare Representative",
-      str_detect(job_role, "lab")        ~ "Laboratory Technician",
-      str_detect(job_role, "manufac")    ~ "Manufacturing Director",
-      str_detect(job_role, "research s") ~ "Research Scientist",
-      str_detect(job_role, "research d") ~ "Research Director",
-      str_detect(job_role, "sales exe")  ~ "Sales Executive",
-      str_detect(job_role, "sales rep")  ~ "Sales Representative",
-      str_detect(job_role, "manager")    ~ "Manager",
-      str_detect(job_role, "human")      ~ "Human Resources",
-      TRUE                               ~ "Other"
+      job_role %in% c("healthcare representative", "healthcare rep")    ~ "Healthcare Representative",
+      job_role %in% c("laboratory technician", "lab technician")        ~ "Laboratory Technician",
+      job_role %in% c("manufacturing director", "manufacture director") ~ "Manufacturing Director",
+      job_role %in% c("research scientist")                             ~ "Research Scientist",
+      job_role %in% c("research director")                              ~ "Research Director",
+      job_role %in% c("sales executive", "sales exe")                   ~ "Sales Executive",
+      job_role %in% c("sales representative", "sales rep")              ~ "Sales Representative",
+      job_role %in% c("manager")                                        ~ "Manager",
+      job_role %in% c("human resources", "hr")                          ~ "Human Resources",
+      TRUE                                                              ~ NA_character_
     ),
     
     # Marital Status
