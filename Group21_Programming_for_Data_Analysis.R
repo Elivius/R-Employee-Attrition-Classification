@@ -204,6 +204,7 @@ for (col in num_cols) {
 # 6. Zero Variance (Feature that have same value every single row) - Use caret package
 # We saw that at 5b and 5c some feature that only have same value like Over18 only "Y"
 # This is Zero Variance feature, it provides zero information to help a model to distinguish between different employees
+message("\n--- Question 6: Zero Variance ---")
 near_zero_variance_feature <- nearZeroVar(df_raw, saveMetrics = TRUE) # saveMetrics to display details in 2D table
 print(near_zero_variance_feature[near_zero_variance_feature$zeroVar == TRUE, ])
 
@@ -257,9 +258,9 @@ message("[OK] Configuration set — proceeding to cleaning.")
 # Fix: clean_names() converts everything to lowercase snake_case
 # MonthlyIncome -> monthly_income | DistanceFromHome -> distance_from_home
 # -----------------------------------------------------------------------------
+message("\n--- 5.1 Standardise Column Names ---")
 df <- df_raw %>% clean_names()
 
-message("\n--- 5.1 Standardise Column Names ---")
 print(names(df))
 message("[OK] 5.1 Column names standardised.")
 
@@ -267,10 +268,10 @@ message("[OK] 5.1 Column names standardised.")
 # 5.2 Remove Zero Variance Features
 # Problem: Zero-variance features skew/break models
 # -----------------------------------------------------------------------------
+message("\n--- 5.2 Remove Zero Variance Features ---")
 nzv_metrics <- nearZeroVar(df, saveMetrics = TRUE)
 zero_var_cols <- which(nzv_metrics$zeroVar == TRUE)
 
-message("\n--- 5.2 Remove Zero Variance Features ---")
 if (length(zero_var_cols) > 0) {
   df <- df[, -zero_var_cols]
   message("[OK] 5.2 Removed ", length(zero_var_cols), " zero-variance columns.")
@@ -297,6 +298,7 @@ if ("employee_number" %in% names(df)) {
 # IMPROVEMENT: pre-clean each column ONCE with tolower(trimws()) first
 # then case_when conditions are simple — no repeated wrapping needed
 # -----------------------------------------------------------------------------
+message("\n--- 5.4 Universal Categorical Normalization ---")
 df <- df %>%
   
   # Step 1 — normalise all categorical columns to lowercase, no spaces
@@ -387,8 +389,6 @@ df <- df %>%
       TRUE ~ NA_character_
     )
   )
-
-message("\n--- 5.4 Universal Categorical Normalization ---")
 message("[OK] 5.4 Categorical columns standardised.")
 
 
@@ -399,6 +399,7 @@ message("[OK] 5.4 Categorical columns standardised.")
 # Fix: strip anything that is not a digit or decimal point
 # IMPROVEMENT: simpler auto-detection using sapply instead of chained selects
 # -----------------------------------------------------------------------------
+message("\n--- 5.5 Clean Dirty Numeric Columns ---")
 clean_numeric <- function(x) {
   x <- gsub("[^0-9.]", "", as.character(x))  # strip non-numeric chars
   x[x == ""] <- NA                            # empty string = missing
@@ -425,7 +426,6 @@ dirty_cols <- names(df)[
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
-message("\n--- 5.5 Clean Dirty Numeric Columns ---")
 message("[OK] 5.5 Cleaned ", length(dirty_cols), " dirty numeric columns.")
 if (length(dirty_cols) > 0) {
   cat("  Columns:", paste(dirty_cols, collapse = ", "), "\n")
@@ -438,11 +438,11 @@ if (length(dirty_cols) > 0) {
 # Fix: keep only the first occurrence of each duplicated row
 # distinct() compares every column — only removes EXACT full-row duplicates
 # -----------------------------------------------------------------------------
+message("\n--- 5.6 Remove Duplicate Rows ---")
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
 
 dedup_removed <- rows_before_dedup - nrow(df)
-message("\n--- 5.6 Remove Duplicate Rows ---")
 message("[OK] 5.6 Removed ", dedup_removed, " duplicate rows.")
 
 
@@ -453,9 +453,9 @@ message("[OK] 5.6 Removed ", dedup_removed, " duplicate rows.")
 # Cannot guess whether someone left or stayed — no valid imputation exists
 # Done BEFORE imputation so these rows don't affect median/mode calculations
 # -----------------------------------------------------------------------------
+message("\n--- 5.7 Remove Rows With Missing Target ---")
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-message("\n--- 5.7 Remove Rows With Missing Target ---")
 message("[OK] 5.7 Removed ", rows_before_target - nrow(df),
     " rows with missing Attrition (target variable).")
 cat("  Rows remaining:", nrow(df), "\n")
@@ -467,6 +467,7 @@ cat("  Rows remaining:", nrow(df), "\n")
 # Numeric   -> median (robust to outliers, not skewed by extremes)
 # Character -> mode   (most common value — only logical choice for text)
 # -----------------------------------------------------------------------------
+message("\n--- 5.8 Impute Remaining Missing Values ---")
 get_mode <- function(x) {
   ux <- unique(x[!is.na(x)])            # unique non-NA values
   ux[which.max(tabulate(match(x, ux)))] # return the most frequent one
@@ -491,7 +492,6 @@ df <- df %>%
   )
 
 na_after <- sum(is.na(df))
-message("\n--- 5.8 Impute Remaining Missing Values ---")
 message("[OK] 5.8 Imputation complete — filled ",
     na_before - na_after, " missing values.")
 
@@ -502,6 +502,7 @@ message("[OK] 5.8 Imputation complete — filled ",
 # Must happen AFTER imputation — factors don't work well with imputation
 # Without this R treats Education=4 as mathematically twice Education=2
 # -----------------------------------------------------------------------------
+message("\n--- 5.9 Convert to Labelled Factors ---")
 df <- df %>%
   mutate(
     # Ordinal Variables (Ranked)
@@ -532,13 +533,11 @@ df <- df %>%
     job_role                  = factor(job_role)
   )
 
-message("\n--- 5.9 Convert to Labelled Factors ---")
 message("[OK] 5.9 Columns converted to labelled factors.")
 
 # -----------------------------------------------------------------------------
 # 5.10 Impossible Logic Correction — Correct by Taking Logical Maximum/Minimum
 # -----------------------------------------------------------------------------
-
 message("\n--- 5.10 Impossible Logic Correction ---")
 # Count before correction
 flag1_count <- sum(df$total_working_years < df$years_at_company,
