@@ -435,7 +435,9 @@ if (length(dirty_cols) > 0) {
 # -----------------------------------------------------------------------------
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
-message("\n[OK] 5.6 Removed ", rows_before_dedup - nrow(df), " duplicate rows.\n")
+
+dedup_removed <- rows_before_dedup - nrow(df)
+message("\n[OK] 5.6 Removed ", dedup_removed, " duplicate rows.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -668,10 +670,10 @@ df_clean %>%
 # --- 6.5 Final Data Health Summary ---
 cat("\n--- 6.5 Final Data Health Summary ---\n")
 cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
-cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      rows_before_dedup - rows_before_target))
+cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      dedup_removed))
 cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - rows_before_impossible_correction))
 cat(sprintf("  %-40s %d\n",    "NAs imputed:",                             na_before - na_after))
-cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",  length(bad_cols)))
+cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",  length(zero_var_cols)))
 cat(sprintf("  %-40s %d\n",    "Impossible logic corrected:",              total_corrected))
 cat(sprintf("  %-40s %d\n",    "Impossible logic removed:",                final_removed))
 cat(sprintf("  %-40s %d\n",    "Final clean rows:",                        nrow(df_clean)))
