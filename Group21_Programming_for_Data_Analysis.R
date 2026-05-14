@@ -737,3 +737,32 @@ theme_comp <- theme_minimal(base_size = 13) +
 
 # Colour mapping — blue = stayed, red = left
 comp_colors <- c("No" = "#2196F3", "Yes" = "#F44336")
+
+cat("\n=== OBJECTIVE 1: COMPENSATION ANALYSIS ===\n")
+cat("Variables: MonthlyIncome, PercentSalaryHike, StockOptionLevel\n")
+cat("Hypothesis: Lower compensation is significantly associated with higher attrition\n\n")
+
+#Section 7.2 Descriptive Analysis
+# ====================================
+
+cat("--- Compensation Summary by Attrition Group ---\n")
+
+compensation_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    n                    = n(),
+    avg_monthly_income   = round(mean(monthly_income,      na.rm = TRUE), 2),
+    med_monthly_income   = round(median(monthly_income,    na.rm = TRUE), 2),
+    avg_salary_hike      = round(mean(percent_salary_hike, na.rm = TRUE), 2),
+    med_salary_hike      = round(median(percent_salary_hike, na.rm = TRUE), 2),
+    .groups = "drop"
+  )
+
+print(compensation_summary)
+
+# Stock option distribution by attrition
+cat("\n--- Stock Option Level Distribution by Attrition ---\n")
+stock_table <- table(df_clean$stock_option_level, df_clean$attrition)
+print(stock_table)
+cat("\nRow percentages:\n")
+print(round(prop.table(stock_table, margin = 1) * 100, 1))
