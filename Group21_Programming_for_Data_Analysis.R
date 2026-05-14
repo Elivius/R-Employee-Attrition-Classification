@@ -263,12 +263,10 @@ df <- df_raw %>% clean_names()
 message("\n[OK] 5.1 Column names standardised.\n")
 print(names(df))
 
-
 # -----------------------------------------------------------------------------
 # 5.2 Remove Zero Variance Features
-# Problem (Q6)
+# Problem: Zero-variance features skew/break models
 # -----------------------------------------------------------------------------
-
 nzv_metrics <- nearZeroVar(df, saveMetrics = TRUE)
 zero_var_cols <- which(nzv_metrics$zeroVar == TRUE)
 
@@ -279,8 +277,20 @@ if (length(zero_var_cols) > 0) {
   message("\n[OK] 5.2 All columns have variance. No removal needed.\n")
 }
 
+
 # -----------------------------------------------------------------------------
-# 5.3 Universal Categorical Normalization
+# 5.3 Employee ID Features
+# Prevent Overfitting
+# -----------------------------------------------------------------------------
+if ("employee_number" %in% names(df)) {
+  df <- df %>% select(-employee_number)
+  message("[OK] 5.3 Removed ID column: employee_number\n")
+} else {
+  message("[OK] 5.3 No ID column found to remove.\n")
+}
+
+# -----------------------------------------------------------------------------
+# 5.4 Universal Categorical Normalization
 # Problem (Q5b): same values written in many inconsistent formats
 # IMPROVEMENT: pre-clean each column ONCE with tolower(trimws()) first
 # then case_when conditions are simple — no repeated wrapping needed
@@ -375,11 +385,11 @@ df <- df %>%
     )
   )
 
-cat("[OK] 5.3 Categorical columns standardised.\n")
+cat("[OK] 5.4 Categorical columns standardised.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.4 Clean Dirty Numeric Columns
+# 5.5 Clean Dirty Numeric Columns
 # Problem (Q2 + Q5c): numeric columns stored as text with junk characters
 # Examples found: "1423_"  "329?"  "4_"  "670?"  "1?"  "2_"
 # Fix: strip anything that is not a digit or decimal point
@@ -411,25 +421,25 @@ dirty_cols <- names(df)[
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
 
-message("\n[OK] 5.4 Cleaned ", length(dirty_cols), " dirty numeric columns.\n")
+message("\n[OK] 5.5 Cleaned ", length(dirty_cols), " dirty numeric columns.\n")
 if (length(dirty_cols) > 0) {
   cat("Columns:", paste(dirty_cols, collapse = ", "), "\n")
 }
 
 
 # -----------------------------------------------------------------------------
-# 5.5 Remove Duplicate Rows
+# 5.6 Remove Duplicate Rows
 # Problem (Q4b): duplicate rows inflate analysis results
 # Fix: keep only the first occurrence of each duplicated row
 # distinct() compares every column — only removes EXACT full-row duplicates
 # -----------------------------------------------------------------------------
 rows_before_dedup <- nrow(df)
 df <- df %>% distinct()
-message("\n[OK] 5.5 Removed ", rows_before_dedup - nrow(df), " duplicate rows.\n")
+message("\n[OK] 5.6 Removed ", rows_before_dedup - nrow(df), " duplicate rows.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.6 Remove Rows With Missing Target Variable (Attrition)
+# 5.7 Remove Rows With Missing Target Variable (Attrition)
 # Problem: 29 rows have no Attrition value — found in Section 3
 # Why remove: Attrition is what we are PREDICTING
 # Cannot guess whether someone left or stayed — no valid imputation exists
@@ -437,13 +447,13 @@ message("\n[OK] 5.5 Removed ", rows_before_dedup - nrow(df), " duplicate rows.\n
 # -----------------------------------------------------------------------------
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-message("\n[OK] 5.6 Removed ", rows_before_target - nrow(df),
+message("\n[OK] 5.7 Removed ", rows_before_target - nrow(df),
     " rows with missing Attrition (target variable).\n")
 message("Rows remaining: ", nrow(df), "\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.7 Impute Remaining Missing Values
+# 5.8 Impute Remaining Missing Values
 # IMPROVEMENT: combined into ONE mutate() instead of two separate calls
 # Numeric   -> median (robust to outliers, not skewed by extremes)
 # Character -> mode   (most common value — only logical choice for text)
@@ -463,12 +473,12 @@ df <- df %>%
   )
 
 na_after <- sum(is.na(df))
-message("\n[OK] 5.7 Imputation complete — filled ",
+message("\n[OK] 5.8 Imputation complete — filled ",
     na_before - na_after, " missing values.\n")
 
 
 # -----------------------------------------------------------------------------
-# 5.8 Convert to Labelled Factors
+# 5.9 Convert to Labelled Factors
 # Labels come from CONFIG (Section 4) — change them there, not here
 # Must happen AFTER imputation — factors don't work well with imputation
 # Without this R treats Education=4 as mathematically twice Education=2
@@ -503,13 +513,13 @@ df <- df %>%
     job_role                  = factor(job_role)
   )
 
-cat("[OK] 5.8 Columns converted to labelled factors.\n")
+cat("[OK] 5.9 Columns converted to labelled factors.\n")
 
 # -----------------------------------------------------------------------------
-# 5.9 Impossible Logic Correction — Correct by Taking Logical Maximum/Minimum
+# 5.10 Impossible Logic Correction — Correct by Taking Logical Maximum/Minimum
 # -----------------------------------------------------------------------------
 
-message("\n--- 5.9 Impossible Logic Correction ---\n")
+message("\n--- 5.10 Impossible Logic Correction ---\n")
 # Count before correction
 flag1_count <- sum(df$total_working_years < df$years_at_company,
                    na.rm = TRUE)
@@ -583,7 +593,7 @@ cat("  Flag 1 remaining:", flag1_after, "\n")
 cat("  Flag 2 remaining:", flag2_after, "\n")
 cat("  Flag 3 remaining:", flag3_after, "\n")
 
-message("\n[OK] 5.9 All impossible logic corrected.
+message("\n[OK] 5.10 All impossible logic corrected.
         \nTotal correction: ", total_corrected,
         "\nTotal removal: ", final_removed,
         "\nLeftover dataset: ", nrow(df), " x ", ncol(df), "\n")
