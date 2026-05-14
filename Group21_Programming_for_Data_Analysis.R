@@ -689,7 +689,7 @@ df_clean %>%
 
 
 # --- 6.4 Final Data Health Summary ---
-cat("\n--- 6.4 Final Data Health Summary ---\n")
+message("\n--- 6.4 Final Data Health Summary ---")
 cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
 cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      dedup_removed))
 cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - rows_before_impossible_correction))
