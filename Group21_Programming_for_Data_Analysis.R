@@ -540,6 +540,9 @@ cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
 cat("Total Impossible Logic:", total_initial_flags,"\n")
 
 # Correct all three in one mutate
+# NOTE: Fix 1 (push UP) and Fix 2 (push DOWN) can conflict when
+# years_at_company > age - 14. Those rows become irreconcilable
+# and are removed below after the heuristic pass.
 df <- df %>%
   mutate(
     
@@ -668,8 +671,8 @@ df_clean %>%
   print(n = Inf)
 
 
-# --- 6.5 Final Data Health Summary ---
-cat("\n--- 6.5 Final Data Health Summary ---\n")
+# --- 6.4 Final Data Health Summary ---
+cat("\n--- 6.4 Final Data Health Summary ---\n")
 cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
 cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      dedup_removed))
 cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - rows_before_impossible_correction))
