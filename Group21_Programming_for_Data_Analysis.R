@@ -468,10 +468,19 @@ get_mode <- function(x) {
 
 na_before <- sum(is.na(df))
 
-# Single mutate handles both numeric and categorical imputation together
+# Ordinal columns (1-4 or 1-5 scales) — use ROUNDED median so values
+# stay as valid integers for factor conversion in Step 5.9
+ordinal_cols <- c("education", "environment_satisfaction", "job_satisfaction",
+                 "job_involvement", "relationship_satisfaction",
+                 "work_life_balance", "performance_rating")
+
+# Single mutate handles ordinal, continuous numeric, and categorical together
 df <- df %>%
   mutate(
-    across(where(is.numeric),   ~ ifelse(is.na(.), median(., na.rm = TRUE), .)),
+    across(all_of(ordinal_cols),
+           ~ ifelse(is.na(.), round(median(., na.rm = TRUE)), .)),
+    across(where(is.numeric) & !all_of(ordinal_cols),
+           ~ ifelse(is.na(.), median(., na.rm = TRUE), .)),
     across(where(is.character), ~ ifelse(is.na(.), get_mode(.), .))
   )
 
