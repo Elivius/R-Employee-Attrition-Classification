@@ -720,3 +720,77 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
 # Each group member writes their assigned objective below this line
 # =============================================================================
+
+
+# =============================================================================
+# SECTION 7 — OBJECTIVE 2: BURNOUT & WORK-LIFE PRESSURE
+# Analyst  : Chin Kai Jack
+# Variables: OverTime, BusinessTravel, DistanceFromHome, MaritalStatus
+#
+# Hypotheses:
+#   H1: Overtime employees show significantly higher attrition (Chi-Square)
+#   H2: Travel frequency has a dose-response relationship with attrition
+#   H3: Distance from home acts as a "Time Tax" compounding burnout risk
+#   H4: Marital status moderates burnout sensitivity (Social Buffer Theory)
+#
+# Analytical Framework:
+#   Tier 1 — Descriptive  : Proportional bar charts, violin plots, heatmap
+#   Tier 2 — Diagnostic   : Chi-Square, Cramér's V, Kruskal-Wallis
+#   Tier 3 — Predictive   : Multivariate Logistic Regression
+# =============================================================================
+
+
+# --- 7.0 Define Objective 2 Theme -------------------------------------------
+# Reusable theme for all Burnout section plots — keeps formatting consistent
+OBJ1_THEME <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(colour = "grey40", size = 11),
+    axis.title    = element_text(face = "bold"),
+    legend.position = "top"
+  )
+
+
+# =============================================================================
+# 7.1 ANALYSIS 2-1: OVERTIME x ATTRITION  (Chi-Square + Cramér's V)
+# =============================================================================
+message("\n--- 7.1 Overtime x Attrition (Chi-Square) ---")
+
+# A. Contingency Table
+overtime_tbl <- table(df_clean$over_time, df_clean$attrition)
+cat("Contingency Table:\n")
+print(overtime_tbl)
+
+# B. Chi-Square Test
+overtime_chi <- chisq.test(overtime_tbl)
+cat("\nChi-Square Results:\n")
+print(overtime_chi)
+
+# C. Effect Size — Cramér's V
+# p-value = IF the association is real | Cramér's V = HOW STRONG it is
+# Interpretation: 0.10–0.29 = medium, 0.30+ = strong
+overtime_cramV <- sqrt(overtime_chi$statistic /
+                         (nrow(df_clean) * (min(dim(overtime_tbl)) - 1)))
+cat("Cramér's V =", round(overtime_cramV, 3), "\n")
+
+# D. Visualization — Proportional Stacked Bar with Percentage Labels
+p_obj2_1 <- df_clean %>%
+  count(over_time, attrition) %>%
+  group_by(over_time) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = over_time, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Burnout / Workload Intensity: Overtime & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(overtime_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(overtime_cramV, 3)),
+    x = "Working Overtime", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ1_THEME
+
+print(p_obj2_1)
