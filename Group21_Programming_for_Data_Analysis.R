@@ -794,3 +794,49 @@ p_obj2_1 <- df_clean %>%
   OBJ1_THEME
 
 print(p_obj2_1)
+
+
+# =============================================================================
+# 7.2 ANALYSIS 2-2: BUSINESS TRAVEL x ATTRITION  (Chi-Square + Cramér's V + Dose-Response)
+# =============================================================================
+message("\n--- 7.2 Business Travel x Attrition (Chi-Square) ---")
+
+# A. Contingency Table (as row percentages)
+travel_tbl <- table(df_clean$business_travel, df_clean$attrition)
+cat("Row Percentages (%):\n")
+print(round(prop.table(travel_tbl, margin = 1) * 100, 1))
+
+# B. Chi-Square Test
+travel_chi <- chisq.test(travel_tbl)
+cat("\nChi-Square Results:\n")
+print(travel_chi)
+
+# C. Effect Size — Cramér's V
+travel_cramV <- sqrt(travel_chi$statistic /
+                       (nrow(df_clean) * (min(dim(travel_tbl)) - 1)))
+cat("Cramér's V =", round(travel_cramV, 3), "\n")
+
+# D. Visualization — Dose-Response Gradient Bar Chart
+p_obj2_2 <- df_clean %>%
+  # Reorder factor to show dose-response gradient
+  mutate(business_travel = factor(business_travel, levels = c("No Travel", "Travel Rarely", "Travel Frequently"))) %>%
+  count(business_travel, attrition) %>%
+  group_by(business_travel) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = business_travel, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Professional Strain: Travel Frequency & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(travel_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(travel_cramV, 3),
+                      "\nDose-Response: does attrition increase with each travel level? The more X given, the more Y happens"),
+    x = "Travel Frequency (ordered)", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ1_THEME
+
+print(p_obj2_2)
