@@ -769,7 +769,7 @@ print(round(prop.table(stock_table, margin = 1) * 100, 1))
 
 
 #Section 7.2: Visualization
-#Plot 1: To investigate relationship of Monthly Income and attrition
+
 # --- Preparation: calculate summary stats for annotations ---
 # Calculate summary stats for labels
 income_summary <- df_clean %>%
@@ -781,8 +781,8 @@ income_summary <- df_clean %>%
     .groups = "drop"
   )
 
-# Plot
-p1a <- ggplot(df_clean,
+#Plot 1: To investigate relationship of monthly income and attrition
+plot1a <- ggplot(df_clean,
               aes(x = attrition, y = monthly_income, fill = attrition)) +
   geom_boxplot(alpha = 0.7, outlier.alpha = 0.2,
                outlier.size = 1, width = 0.5) +
@@ -804,4 +804,29 @@ p1a <- ggplot(df_clean,
   theme_comp +
   theme(legend.position = "none")
 
-print(p1a)
+print(plot1a)
+
+#Conclusion:
+#"The visual analysis of Monthly Income Distribution reveals a significant disparity between the two groups. 
+#Employees who remained with the organization (Median $\approx$ RM5,000) earn more than those who left (Median $\approx$ RM4,000). 
+#Furthermore, the density of individual data points (jitter) shows that attrition is most prevalent among those earning below RM7,500, with very few instances of attrition occurring in the high-income brackets (above RM15,000). 
+#This suggests that financial compensation acts as a strong retention factor."
+
+#Plot 2: To investigate relationship of salary Hike% and attrition
+# Reveals if employees who left received smaller raises
+plot1b <- ggplot(df_clean %>% filter(!is.na(percent_salary_hike)),
+              aes(x = attrition, y = percent_salary_hike, fill = attrition)) +
+  geom_violin(alpha = 0.6, trim = FALSE) +
+  geom_boxplot(width = 0.1, fill = "white",
+               alpha = 0.9, outlier.size = 1) +
+  scale_fill_manual(values = comp_colors) +
+  labs(
+    title    = "Salary Hike % vs Attrition",
+    subtitle = "Distribution of salary increases by attrition status",
+    x        = "Attrition",
+    y        = "Percent Salary Hike (%)",
+    fill     = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1b)
