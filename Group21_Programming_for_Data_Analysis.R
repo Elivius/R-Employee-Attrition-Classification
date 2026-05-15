@@ -766,3 +766,42 @@ stock_table <- table(df_clean$stock_option_level, df_clean$attrition)
 print(stock_table)
 cat("\nRow percentages:\n")
 print(round(prop.table(stock_table, margin = 1) * 100, 1))
+
+
+#Section 7.2: Visualization
+#Plot 1: To investigate relationship of Monthly Income and attrition
+# --- Preparation: calculate summary stats for annotations ---
+# Calculate summary stats for labels
+income_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    n      = n(),
+    mean   = round(mean(monthly_income, na.rm = TRUE), 0),
+    median = round(median(monthly_income, na.rm = TRUE), 0),
+    .groups = "drop"
+  )
+
+# Plot
+p1a <- ggplot(df_clean,
+              aes(x = attrition, y = monthly_income, fill = attrition)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.2,
+               outlier.size = 1, width = 0.5) +
+  geom_jitter(aes(color = attrition),
+              width = 0.15, alpha = 0.15, size = 0.8) +
+  stat_summary(fun = mean, geom = "point",
+               shape = 18, size = 4, color = "white") +
+  scale_fill_manual(values  = comp_colors) +
+  scale_color_manual(values = comp_colors) +
+  scale_y_continuous(labels = comma,
+                     expand = expansion(mult = c(0.1, 0.05))) +
+  labs(
+    title   = "Monthly Income Distribution by Attrition",
+    x       = "Attrition Status",
+    y       = "Monthly Income (RM)",
+    fill    = "Attrition",
+    caption = "White diamond = Mean | Line = Median | Points = Individual employees"
+  ) +
+  theme_comp +
+  theme(legend.position = "none")
+
+print(p1a)
