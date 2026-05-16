@@ -720,3 +720,58 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
 # Each group member writes their assigned objective below this line
 # =============================================================================
+
+# -----------------------------------------------------------------------------
+# 7.1 Job Level vs Attrition (Career Progression Indicator)
+# -----------------------------------------------------------------------------
+
+table(df_clean$job_level, df_clean$attrition)
+
+p_obj3_1 <- ggplot(df_clean,
+                   aes(x = job_level,
+                       fill = attrition)) +
+  geom_bar(position = "fill") +
+  labs(title = "Job Level vs Attrition",
+       x = "Job Level",
+       y = "Proportion of Employees") +
+  theme_minimal()
+
+p_obj3_1
+
+
+# -----------------------------------------------------------------------------
+# 7.2 Years at Company vs Attrition (Tenure Indicator)
+# -----------------------------------------------------------------------------
+
+table(df_clean$attrition, df_clean$years_at_company)
+
+p_obj3_2 <- ggplot(df_clean,
+                   aes(x = attrition,
+                       y = years_at_company)) +
+  geom_boxplot() +
+  labs(title = "Years at Company vs Attrition",
+       x = "Attrition",
+       y = "Years at Company") +
+  theme_minimal()
+
+p_obj3_2
+
+
+# -----------------------------------------------------------------------------
+# 7.3 Years in Current Role vs Attrition (Additional Insight)
+# -----------------------------------------------------------------------------
+
+p_obj3_3 <- ggplot(df_clean,
+                   aes(x = years_in_current_role,
+                       fill = attrition)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Years in Current Role vs Attrition",
+       x = "Years in Current Role",
+       y = "Density") +
+  theme_minimal()
+
+p_obj3_3
+
+
+
+
