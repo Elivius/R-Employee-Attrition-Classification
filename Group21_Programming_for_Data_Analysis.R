@@ -1019,3 +1019,81 @@ print(comp_stats)
 #Section 8.5: What if analysis
 # Simulate the effect of compensation policy changes on attrition
 # Uses the logistic regression model to predict new attrition probabilities
+
+cat("\n\n--- What-If Analysis: Compensation Policy Simulation ---\n")
+
+#A simple compensation-focused logistic regression
+compensation_model_data <- df_clean %>%
+  select(attrition, monthly_income, percent_salary_hike,
+         stock_option_level, job_level, age) %>%
+  mutate(
+    stock_option_level = factor(stock_option_level)
+  ) %>%
+  drop_na()
+
+set.seed(42)
+compensation_split <- initial_split(compensation_model_data, prop = 0.8, strata = attrition)
+compensation_train <- training(compensation_split)
+compensation_test  <- testing(compensation_split)
+
+compensation_recipe <- recipe(attrition ~ ., data = compensation_train) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_dummy(all_nominal_predictors())
+
+compensation_log_model <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+
+compensation_workflow <- workflow() %>%
+  add_recipe(compensation_recipe) %>%
+  add_model(compensation_log_model)
+
+compensation_fit <- compensation_workflow %>% fit(data = compensation_train)
+
+# --- Scenario 1: 10% Salary Increase for ALL employees ---
+scenario1 <- compensation_model_data %>%
+  mutate(monthly_income = monthly_income * 1.10)  # increase all salaries 10%
+
+pred_current   <- predict(compensation_fit, compensation_model_data, type = "prob")$.pred_Yes
+pred_scenario1 <- predict(compensation_fit, scenario1,       type = "prob")$.pred_Yes
+
+current_rate   <- mean(pred_current   > 0.5) * 100
+scenario1_rate <- mean(pred_scenario1 > 0.5) * 100
+
+cat("\nScenario 1: 10% Salary Increase for All Employees\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after 10% increase :", round(scenario1_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario1_rate, 1), "%\n")
+
+# --- Scenario 2: Increase Minimum Salary Hike to 15% ---
+scenario2 <- compensation_model_data %>%
+  mutate(percent_salary_hike = pmax(percent_salary_hike, 15))  # minimum 15%
+
+pred_scenario2 <- predict(compensation_fit, scenario2, type = "prob")$.pred_Yes
+scenario2_rate <- mean(pred_scenario2 > 0.5) * 100
+
+cat("\nScenario 2: Minimum Salary Hike of 15% for All Employees\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after policy change:", round(scenario2_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario2_rate, 1), "%\n")
+
+# --- Scenario 3: Give Stock Options to Employees with Level 0 ---
+scenario3 <- compensation_model_data %>%
+  mutate(
+    stock_option_level = factor(
+      ifelse(as.numeric(as.character(stock_option_level)) == 0,
+             1,
+             as.numeric(as.character(stock_option_level)))
+    )
+  )
+
+pred_scenario3 <- predict(compensation_fit, scenario3, type = "prob")$.pred_Yes
+scenario3_rate <- mean(pred_scenario3 > 0.5) * 100
+
+cat("\nScenario 3: Provide Minimum Stock Options to Employees with None\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after policy change:", round(scenario3_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario3_rate, 1), "%\n")
