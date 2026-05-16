@@ -1,8 +1,10 @@
 # =============================================================================
 # EMPLOYEE ATTRITION CLASSIFICATION
 # Group Number : GROUP 21
-# Members      : [Joshua Yeo Jing Hao, TP077315], [Chin Kai Jack, TP076605],
-#                [Ee Jin Xing, TP076848], [Lee Hong Yi, TP076604]
+# Members      : [Joshua Yeo Jing Hao, TP077315], 
+#                [Chin Kai Jack, TP076605],
+#                [Ee Jin Xing, TP076848], 
+#                [Lee Hong Yi, TP076604]
 # Date         : -
 # =============================================================================
 #
@@ -781,6 +783,13 @@ income_summary <- df_clean %>%
     .groups = "drop"
   )
 
+hike_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    mean_hike = round(mean(percent_salary_hike, na.rm = TRUE), 2),
+    .groups   = "drop"
+  )
+
 #Plot 1: To investigate relationship of monthly income and attrition
 plot1a <- ggplot(df_clean,
               aes(x = attrition, y = monthly_income, fill = attrition)) +
@@ -812,21 +821,122 @@ print(plot1a)
 #Furthermore, the density of individual data points (jitter) shows that attrition is most prevalent among those earning below RM7,500, with very few instances of attrition occurring in the high-income brackets (above RM15,000). 
 #This suggests that financial compensation acts as a strong retention factor."
 
-#Plot 2: To investigate relationship of salary Hike% and attrition
+#Plot 2: To investigate relationship between salary hike% and attrition
 # Reveals if employees who left received smaller raises
 plot1b <- ggplot(df_clean %>% filter(!is.na(percent_salary_hike)),
-              aes(x = attrition, y = percent_salary_hike, fill = attrition)) +
-  geom_violin(alpha = 0.6, trim = FALSE) +
-  geom_boxplot(width = 0.1, fill = "white",
-               alpha = 0.9, outlier.size = 1) +
-  scale_fill_manual(values = comp_colors) +
+              aes(x     = percent_salary_hike,
+                  fill  = attrition,
+                  color = attrition)) +
+  geom_density(alpha = 0.4, size = 1) +
+  geom_vline(data = hike_summary,
+             aes(xintercept = mean_hike, color = attrition),
+             linetype = "dashed", size = 1) +
+  geom_text(data = hike_summary,
+            aes(x     = mean_hike,
+                y     = 0.15,
+                label = paste0(attrition, "\nMean: ", mean_hike, "%"),
+                color = attrition),
+            nudge_x     = 0.8,
+            size        = 3.2,
+            fontface    = "bold",
+            inherit.aes = FALSE) +
+  scale_fill_manual(values  = comp_colors) +
+  scale_color_manual(values = comp_colors) +
   labs(
-    title    = "Salary Hike % vs Attrition",
-    subtitle = "Distribution of salary increases by attrition status",
-    x        = "Attrition",
-    y        = "Percent Salary Hike (%)",
-    fill     = "Attrition"
+    title    = "Salary Hike % Distribution by Attrition",
+    subtitle = "Dashed lines show group means",
+    x        = "Percent Salary Hike (%)",
+    y        = "Density",
+    fill     = "Attrition",
+    color    = "Attrition"
   ) +
   theme_comp
 
 print(plot1b)
+
+#Conclusion:
+#The average salary hike percentage is practically identical for employees who stay and employees who leave.
+#Interestingly, a minor increase in attrition density is observed at the extreme high end of the scale (22%–24%).
+#This suggests that absolute percentage raises do not act as a primary retention mechanism in isolation, and high raises alone are insufficient to mitigate other underlying push factors.
+
+#Plot 3: To investigate relationship between stock option and attrition
+plot1c <- df_clean %>%
+  count(stock_option_level, attrition) %>%
+  group_by(stock_option_level) %>%
+  mutate(
+    pct   = n / sum(n),
+    label = paste0(round(pct * 100, 1), "%")
+  ) %>%
+  ggplot(aes(x    = factor(stock_option_level),
+             y    = pct,
+             fill = attrition)) +
+  geom_col(position = "fill", alpha = 0.85, width = 0.6) +
+  geom_text(aes(label = label),
+            position = position_fill(vjust = 0.5),
+            size     = 3.5,
+            fontface = "bold",
+            color    = "white") +
+  scale_fill_manual(values = comp_colors) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(
+    title    = "Attrition Proportion by Stock Option Level",
+    x        = "Stock Option Level (0 = None, 3 = High)",
+    y        = "Proportion (%)",
+    fill     = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1c)
+
+#Conclusion:
+#"The relationship between Stock Option Level and Attrition displays a distinct U-shaped curve, indicating a non-linear trend.
+#Interestingly, attrition is highest at stock option level 3.
+#This anomaly suggests that while mid-tier equity effectively secures core staff, top-tier stock option structures (typically held by senior executives) do not insulate high-ranking talent from market poaching or strategic exits following stock vesting cycles.
+
+
+# --- Plot 4: Income by Job Level — Deep Dive ---
+# Shows whether income gap exists consistently at EVERY seniority level
+plot1d <- df_clean %>%
+  group_by(job_level, attrition) %>%
+  summarise(
+    median_income = median(monthly_income, na.rm = TRUE),
+    n             = n(),
+    .groups       = "drop"
+  ) %>%
+  ggplot(aes(x    = factor(job_level),
+             y    = median_income,
+             fill = attrition)) +
+  geom_col(position = "dodge", alpha = 0.85, width = 0.7) +
+  geom_text(aes(label = comma(round(median_income, 0))),
+            position = position_dodge(width = 0.7),
+            vjust    = -0.4,
+            size     = 3,
+            fontface = "bold") +
+  scale_fill_manual(values = comp_colors) +
+  scale_y_continuous(labels = comma,
+                     expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title    = "Median Income by Job Level and Attrition",
+    subtitle = "Does the income gap exist at every seniority level?",
+    x        = "Job Level",
+    y        = "Median Monthly Income (RM)",
+    fill     = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1d)
+
+#Conclusion:
+#A critical internal pay gap is identified at Level 1 (Entry-level) and Level 4 (Senior Management). 
+#At Level 4, a stark median income deficit of RM1,833 exists for employees who left compared to their retained peers, signaling severe internal salary compression or inequity that likely catalyzed their exit.
+#Conversely, at Levels 2, 3, and 5, the median income between attrition groups is nearly identical.
+#it indicates that while financial interventions are urgently required to retain talent at Levels 1 and 4, compensation adjustments will likely fail to reduce turnover among mid-level (Levels 2 and 3) and executive (Level 5) staff, where non-monetary retention drivers must be explored.
+
+# --- Display all 4 plots in a 2x2 grid ---
+grid.arrange(plot1a, plot1b, plot1c, plot1d,
+             ncol = 2,
+             top  = "OBJECTIVE 1: Compensation & Attrition Analysis")
+
+#==============================
+#Section 7.4 Statistical Tests
+# To prove findings are statistically significant — not just coincidence
