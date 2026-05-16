@@ -940,3 +940,82 @@ grid.arrange(plot1a, plot1b, plot1c, plot1d,
 #==============================
 #Section 7.4 Statistical Tests
 # To prove findings are statistically significant — not just coincidence
+
+cat("\n--- Statistical Tests: Compensation vs Attrition ---\n")
+
+# --- Test 1: T-Test — Monthly Income ---
+# Use: To compare a numeric variable between two groups (stayed vs left)
+# Null hypothesis: no difference in mean income between groups
+
+ttest_income <- t.test(monthly_income ~ attrition, data = df_clean)
+
+cat("\n1. T-Test: Monthly Income vs Attrition\n")
+cat("   Mean income (Stayed) :", round(ttest_income$estimate[1], 2), "\n")
+cat("   Mean income (Left)   :", round(ttest_income$estimate[2], 2), "\n")
+cat("   Difference           :", round(diff(ttest_income$estimate), 2), "\n")
+cat("   T-statistic          :", round(ttest_income$statistic, 4), "\n")
+cat("   P-value              :", round(ttest_income$p.value, 6), "\n")
+cat("   Result               :", ifelse(ttest_income$p.value < 0.05,
+                                        "SIGNIFICANT — income differs significantly between groups",
+                                        "NOT significant"), "\n")
+
+# --- Test 2: T-Test — Salary Hike % ---
+ttest_hike <- t.test(percent_salary_hike ~ attrition, data = df_clean)
+
+cat("\n2. T-Test: Salary Hike % vs Attrition\n")
+cat("   Mean hike (Stayed) :", round(ttest_hike$estimate[1], 2), "%\n")
+cat("   Mean hike (Left)   :", round(ttest_hike$estimate[2], 2), "%\n")
+cat("   T-statistic        :", round(ttest_hike$statistic, 4), "\n")
+cat("   P-value            :", round(ttest_hike$p.value, 6), "\n")
+cat("   Result             :", ifelse(ttest_hike$p.value < 0.05,
+                                      "SIGNIFICANT — salary hike differs significantly between groups",
+                                      "NOT significant"), "\n")
+
+# --- Test 3: Chi-Square — Stock Option Level ---
+# Use: testing association between two categorical variables
+# Null hypothesis: stock option level and attrition are independent
+chisq_stock <- chisq.test(
+  table(df_clean$stock_option_level, df_clean$attrition)
+)
+
+cat("\n3. Chi-Square: Stock Option Level vs Attrition\n")
+cat("   Chi-square statistic :", round(chisq_stock$statistic, 4), "\n")
+cat("   Degrees of freedom   :", chisq_stock$parameter, "\n")
+cat("   P-value              :", round(chisq_stock$p.value, 6), "\n")
+cat("   Result               :", ifelse(chisq_stock$p.value < 0.05,
+                                        "SIGNIFICANT — stock options are associated with attrition",
+                                        "NOT significant"), "\n")
+
+# --- Collect all test results into one clean table ---
+comp_stats <- tibble(
+  test       = c("T-Test", "T-Test", "Chi-Square"),
+  variable   = c("Monthly Income", "Salary Hike %", "Stock Option Level"),
+  statistic  = c(round(ttest_income$statistic, 4),
+                 round(ttest_hike$statistic, 4),
+                 round(chisq_stock$statistic, 4)),
+  p_value    = c(round(ttest_income$p.value, 6),
+                 round(ttest_hike$p.value, 6),
+                 round(chisq_stock$p.value, 6)),
+  significant = ifelse(
+    c(ttest_income$p.value, ttest_hike$p.value, chisq_stock$p.value) < 0.05,
+    "YES ***", "NO"
+  ),
+  conclusion = c(
+    ifelse(ttest_income$p.value < 0.05,
+           "Monthly income significantly lower for employees who left",
+           "No significant income difference"),
+    ifelse(ttest_hike$p.value < 0.05,
+           "Salary hike % significantly differs by attrition",
+           "No significant salary hike difference"),
+    ifelse(chisq_stock$p.value < 0.05,
+           "Stock option level significantly associated with attrition",
+           "No significant association")
+  )
+)
+
+cat("\n--- Compensation Statistical Results Summary ---\n")
+print(comp_stats)
+
+#Section 8.5: What if analysis
+# Simulate the effect of compensation policy changes on attrition
+# Uses the logistic regression model to predict new attrition probabilities
