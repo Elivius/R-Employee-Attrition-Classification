@@ -891,3 +891,77 @@ p_obj2_3 <- df_clean %>%
   OBJ1_THEME
 
 print(p_obj2_3)
+
+
+# =============================================================================
+# 7.4 ANALYSIS 2-4: MARITAL STATUS x ATTRITION  (Chi-Square + Interaction Heatmap)
+# =============================================================================
+message("\n--- 7.4 Marital Status x Attrition (Chi-Square) ---")
+
+# A. Contingency Table
+marital_tbl <- table(df_clean$marital_status, df_clean$attrition)
+cat("Contingency Table:\n")
+print(marital_tbl)
+
+# B. Chi-Square Test for Marital Status
+marital_chi <- chisq.test(marital_tbl)
+cat("\nChi-Square Results:\n")
+print(marital_chi)
+
+# C. Effect Size — Cramér's V
+marital_cramV <- sqrt(marital_chi$statistic /
+                        (nrow(df_clean) * (min(dim(marital_tbl)) - 1)))
+cat("Cramér's V =", round(marital_cramV, 3), "\n")
+
+# D. Proportional Bar Chart
+p_obj2_4 <- df_clean %>%
+  count(marital_status, attrition) %>%
+  group_by(marital_status) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = marital_status, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Social Buffer: Marital Status & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(marital_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(marital_cramV, 3)),
+    x = "Marital Status", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ1_THEME
+
+print(p_obj2_4)
+
+
+# E. Interaction Heatmap — Marital Status × Overtime
+#    This is the "distinction-level" chart: which COMBINATION is most at risk?
+heatmap_data <- df_clean %>%
+  group_by(marital_status, over_time) %>%
+  summarise(
+    n        = n(),
+    attr_pct = mean(attrition == "Yes") * 100,
+    .groups  = "drop"
+  )
+
+cat("\nInteraction Table — Attrition Rate (%) by Marital Status × Overtime:\n")
+print(heatmap_data)
+
+p_obj2_5 <- heatmap_data %>%
+  ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
+  geom_tile(colour = "white", linewidth = 1.5) +
+  geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_gradient(low = COLOR_NO, high = COLOR_YES,
+                      name = "Attrition %") +
+  labs(
+    title    = "Risk Heatmap: Marital Status × Overtime Interaction",
+    subtitle = "Single + Overtime = highest burnout vulnerability",
+    x = "Overtime Status", y = "Marital Status"
+  ) +
+  OBJ1_THEME +
+  theme(legend.position = "right")
+
+print(p_obj2_5)
