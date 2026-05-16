@@ -1011,3 +1011,110 @@ p_obj2_6 <- heatmap_data_3way %>%
   )
 
 print(p_obj2_6)
+
+
+# =============================================================================
+# 7.5 EXTRA FEATURE: LOGISTIC REGRESSION (All 4 Burnout Factors Combined)
+# =============================================================================
+message("\n--- 7.5 Logistic Regression — Burnout Model ---")
+
+# A. Prepare binary response (glm requires numeric 0/1 for binomial family)
+df_logit <- df_clean %>%
+  mutate(attr_bin = ifelse(attrition == "Yes", 1, 0))
+
+# B. Fit Model - glm() + binomial() = logistic regression
+model_burnout <- glm(
+  attr_bin ~ over_time + business_travel + distance_from_home + marital_status,
+  data   = df_logit,
+  family = binomial()
+)
+
+cat("Model Summary:\n")
+print(summary(model_burnout))
+
+# C. Odds Ratios with 95% Confidence Intervals
+odds_df <- data.frame(
+  term      = names(coef(model_burnout)),
+  odds      = exp(coef(model_burnout)),
+  ci_low    = exp(confint.default(model_burnout)[, 1]),
+  ci_high   = exp(confint.default(model_burnout)[, 2])
+)
+odds_df <- odds_df[odds_df$term != "(Intercept)", ]   # drop intercept
+rownames(odds_df) <- NULL
+
+cat("\nOdds Ratios (95% CI):\n")
+print(odds_df)
+
+# D. Interpretation Guide
+cat("\n--- How to read Odds Ratios ---\n")
+cat("  OR > 1  → increases attrition risk   (e.g. 3.36 = 3.36× more likely)\n")
+cat("  OR < 1  → decreases attrition risk   (e.g. 0.60 = 40% less likely)\n")
+cat("  CI crossing 1.0 → NOT statistically significant\n")
+
+# E. Forest Plot — Visual Summary of Logistic Regression
+p_obj2_7 <- odds_df %>%
+  mutate(
+    # Clean labels for display
+    label = case_when(
+      term == "over_timeYes"                      ~ "Overtime (Yes)",
+      term == "business_travelTravel Rarely"      ~ "Travel Rarely",
+      term == "business_travelTravel Frequently"  ~ "Travel Frequently",
+      term == "distance_from_home"                ~ "Distance from Home",
+      term == "marital_statusMarried"             ~ "Married",
+      term == "marital_statusSingle"              ~ "Single",
+      TRUE                                        ~ term
+    ),
+    # Flag significance: CI does not cross 1.0
+    significant = ifelse(ci_low > 1 | ci_high < 1, "Significant", "Not Significant")
+  ) %>%
+  ggplot(aes(x = odds, y = reorder(label, odds), colour = significant)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_point(size = 3.5) +
+  geom_errorbarh(aes(xmin = ci_low, xmax = ci_high), height = 0.2, linewidth = 0.8) +
+  scale_colour_manual(values = c("Significant" = COLOR_YES,
+                                  "Not Significant" = "grey60")) +
+  labs(
+    title    = "Burnout Model: What Predicts Attrition?",
+    subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
+    x = "Odds Ratio", y = NULL, colour = "Significance"
+  ) +
+  OBJ1_THEME
+
+print(p_obj2_7)
+
+
+# =============================================================================
+# 7.6 RESULTS SUMMARY TABLE — All Burnout Tests at a Glance
+# =============================================================================
+message("\n--- 7.6 Burnout Analysis Summary ---")
+
+burnout_results <- data.frame(
+  Analysis  = c("Overtime × Attrition",
+                "Travel × Attrition",
+                "Distance × Attrition",
+                "Marital Status × Attrition"),
+  Test      = c("Chi-Square", "Chi-Square", "Kruskal-Wallis", "Chi-Square"),
+  Statistic = c(round(overtime_chi$statistic, 2),
+                round(travel_chi$statistic, 2),
+                round(dist_kw$statistic, 2),
+                round(marital_chi$statistic, 2)),
+  p_value   = c(format.pval(overtime_chi$p.value, digits = 3),
+                format.pval(travel_chi$p.value, digits = 3),
+                format.pval(dist_kw$p.value, digits = 3),
+                format.pval(marital_chi$p.value, digits = 3)),
+  Effect    = c(paste("V =", round(overtime_cramV, 3)),
+                paste("V =", round(travel_cramV, 3)),
+                "—",
+                paste("V =", round(marital_cramV, 3))),
+  Verdict   = c(
+    ifelse(overtime_chi$p.value < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(travel_chi$p.value  < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(dist_kw$p.value     < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(marital_chi$p.value < 0.05, "Reject H0", "Fail to Reject H0")
+  ),
+  stringsAsFactors = FALSE
+)
+
+print(burnout_results)
+
+message("\n[OK] Section 7 — Objective 1 (Burnout & Work-Life Pressure) complete.")
