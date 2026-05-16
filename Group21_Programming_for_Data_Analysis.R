@@ -894,7 +894,7 @@ print(p_obj2_3)
 
 
 # =============================================================================
-# 7.4 ANALYSIS 2-4: MARITAL STATUS x ATTRITION  (Chi-Square + Interaction Heatmap)
+# 7.4 ANALYSIS 2-4: MARITAL STATUS x ATTRITION  (Chi-Square)
 # =============================================================================
 message("\n--- 7.4 Marital Status x Attrition (Chi-Square) ---")
 
@@ -935,9 +935,12 @@ p_obj2_4 <- df_clean %>%
 
 print(p_obj2_4)
 
+# =============================================================================
+# 7.5 ANALYSIS 2-5: Heatmap
+# =============================================================================
 
-# E. Interaction Heatmap — Marital Status × Overtime
-#    This is the "distinction-level" chart: which COMBINATION is most at risk?
+# A. Interaction Heatmap — Marital Status × Overtime
+#    Which COMBINATION is most at risk?
 heatmap_data <- df_clean %>%
   group_by(marital_status, over_time) %>%
   summarise(
@@ -965,3 +968,45 @@ p_obj2_5 <- heatmap_data %>%
   theme(legend.position = "right")
 
 print(p_obj2_5)
+
+
+
+# B. 3-way Interaction Heatmap — Marital Status × Overtime × Business Travel
+#    Three-Way Interaction to isolate the ultimate compounded turnover risk
+heatmap_data_3way <- df_clean %>%
+  group_by(marital_status, over_time, business_travel) %>% # 1. Added travel to grouping
+  summarise(
+    n        = n(),
+    attr_pct = mean(attrition == "Yes") * 100,
+    .groups  = "drop"
+  )
+
+cat("\n3-Way Interaction Table — Attrition Rate (%) with Travel:\n")
+print(heatmap_data_3way)
+
+p_obj2_6 <- heatmap_data_3way %>%
+  ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
+  geom_tile(colour = "white", linewidth = 1.5) +
+  
+  # Reduced size slightly to 3.5 so text fits comfortably inside smaller facet boxes
+  geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
+            colour = "white", fontface = "bold", size = 3.5) + 
+  
+  scale_fill_gradient(low = COLOR_NO, high = COLOR_YES,
+                      name = "Attrition %") +
+  
+  # Splits the heatmap into columns based on travel frequency
+  facet_wrap(~business_travel) + 
+  
+  labs(
+    title    = "Multi-Dimensional Risk Heatmap: Marital × Overtime × Travel",
+    subtitle = "Identifying how operational travel compounding intensifies demographic burnout vulnerabilities",
+    x = "Overtime Status", y = "Marital Status"
+  ) +
+  OBJ1_THEME +
+  theme(
+    legend.position = "right",
+    strip.text = element_text(face = "bold", size = 11) # Makes the facet headers stand out cleanly
+  )
+
+print(p_obj2_6)
