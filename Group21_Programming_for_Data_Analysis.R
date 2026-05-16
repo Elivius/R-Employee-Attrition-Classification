@@ -721,57 +721,411 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # Each group member writes their assigned objective below this line
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# 7.1 Job Level vs Attrition (Career Progression Indicator)
-# -----------------------------------------------------------------------------
+# =============================================================================
+# SECTION 7.3 OBJECTIVE 3: CAREER GROWTH / STAGNATION ANALYSIS
+# Name: [EE JIN XING, TP076848]
+#
+# Variables : YearsAtCompany, YearsInCurrentRole, YearsSinceLastPromotion,
+#             JobLevel, TrainingTimesLastYear, NumCompaniesWorked,
+#             TotalWorkingYears
+# Hypothesis: Employees with stagnant career progression (slow promotions,
+#             fewer training opportunities, low job level mobility) are
+#             significantly more likely to leave the organisation.
+# =============================================================================
 
-table(df_clean$job_level, df_clean$attrition)
+# --- Theme Settings (mirrors Objective 1 style) ---
+theme_career <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle    = element_text(size = 11, hjust = 0.5, color = "grey50"),
+    axis.title       = element_text(face = "bold"),
+    legend.position  = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
 
+# Colour mapping — blue = stayed, red = left (consistent with Objective 1)
+career_colors <- c("No" = "#2196F3", "Yes" = "#F44336")
+
+cat("\n=== OBJECTIVE 3: CAREER GROWTH / STAGNATION ANALYSIS ===\n")
+cat("Variables : years_at_company, years_in_current_role,\n")
+cat("            years_since_last_promotion, job_level,\n")
+cat("            training_times_last_year, num_companies_worked\n")
+cat("Hypothesis: Stagnant career progression is significantly associated\n")
+cat("            with higher attrition.\n\n")
+
+
+# =============================================================================
+# 7.3.1  DESCRIPTIVE ANALYSIS
+# =============================================================================
+
+cat("--- Career Growth Summary by Attrition Group ---\n")
+
+career_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    n                           = n(),
+    avg_years_at_company        = round(mean(years_at_company,            na.rm = TRUE), 2),
+    med_years_at_company        = round(median(years_at_company,          na.rm = TRUE), 2),
+    avg_years_current_role      = round(mean(years_in_current_role,       na.rm = TRUE), 2),
+    med_years_current_role      = round(median(years_in_current_role,     na.rm = TRUE), 2),
+    avg_years_since_promotion   = round(mean(years_since_last_promotion,  na.rm = TRUE), 2),
+    med_years_since_promotion   = round(median(years_since_last_promotion,na.rm = TRUE), 2),
+    avg_training_times          = round(mean(training_times_last_year,    na.rm = TRUE), 2),
+    avg_num_companies_worked    = round(mean(num_companies_worked,        na.rm = TRUE), 2),
+    .groups = "drop"
+  )
+
+print(career_summary)
+
+# Job Level distribution by attrition
+cat("\n--- Job Level Distribution by Attrition ---\n")
+joblevel_table <- table(df_clean$job_level, df_clean$attrition)
+print(joblevel_table)
+cat("\nRow percentages (attrition rate per job level):\n")
+print(round(prop.table(joblevel_table, margin = 1) * 100, 1))
+
+# Training times distribution by attrition
+cat("\n--- Training Times Last Year Distribution by Attrition ---\n")
+training_table <- table(df_clean$training_times_last_year, df_clean$attrition)
+print(training_table)
+cat("\nRow percentages:\n")
+print(round(prop.table(training_table, margin = 1) * 100, 1))
+
+
+# =============================================================================
+# 7.3.2  VISUALISATIONS
+# =============================================================================
+
+# --- Pre-compute annotation stats for plot labels ---
+
+promotion_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    mean_promo = round(mean(years_since_last_promotion, na.rm = TRUE), 2),
+    .groups    = "drop"
+  )
+
+training_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    mean_train = round(mean(training_times_last_year, na.rm = TRUE), 2),
+    .groups    = "drop"
+  )
+
+# -----------------------------------------------------------------------------
+# p_obj3_1 — Years Since Last Promotion vs Attrition (Box + Jitter)
+# Purpose: Reveal whether leavers experienced longer promotion droughts
+# -----------------------------------------------------------------------------
 p_obj3_1 <- ggplot(df_clean,
-                   aes(x = job_level,
-                       fill = attrition)) +
-  geom_bar(position = "fill") +
-  labs(title = "Job Level vs Attrition",
-       x = "Job Level",
-       y = "Proportion of Employees") +
-  theme_minimal()
+                 aes(x = attrition, y = years_since_last_promotion,
+                     fill = attrition)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.2,
+               outlier.size = 1, width = 0.5) +
+  geom_jitter(aes(color = attrition),
+              width = 0.15, alpha = 0.15, size = 0.8) +
+  stat_summary(fun = mean, geom = "point",
+               shape = 18, size = 4, color = "white") +
+  scale_fill_manual(values  = career_colors) +
+  scale_color_manual(values = career_colors) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  labs(
+    title   = "Years Since Last Promotion by Attrition",
+    x       = "Attrition Status",
+    y       = "Years Since Last Promotion",
+    fill    = "Attrition",
+    caption = "White diamond = Mean | Line = Median | Points = Individual employees"
+  ) +
+  theme_career +
+  theme(legend.position = "none")
 
-p_obj3_1
+print(p_obj3_1)
+
+# Conclusion:
+# Employees who left the organisation tend to have waited longer since their
+# last promotion compared to those who stayed. The higher median and wider
+# spread for the "Yes" group suggest that perceived career stagnation —
+# measured through promotion drought — is a meaningful attrition driver.
+# Long waits without advancement likely signal to employees that upward
+# mobility within the organisation is limited, motivating them to seek
+# opportunities elsewhere.
 
 
 # -----------------------------------------------------------------------------
-# 7.2 Years at Company vs Attrition (Tenure Indicator)
+# p_obj3_2 — Training Times Last Year (Density) by Attrition
+# Purpose: Examine whether fewer training opportunities push employees out
 # -----------------------------------------------------------------------------
+p_obj3_2 <- ggplot(df_clean %>% filter(!is.na(training_times_last_year)),
+                 aes(x     = training_times_last_year,
+                     fill  = attrition,
+                     color = attrition)) +
+  geom_density(alpha = 0.4, linewidth = 1) +
+  geom_vline(data    = training_summary,
+             aes(xintercept = mean_train, color = attrition),
+             linetype = "dashed", linewidth = 1) +
+  geom_text(data = training_summary,
+            aes(x     = mean_train,
+                y     = 0.25,
+                label = paste0(attrition, "\nMean: ", mean_train),
+                color = attrition),
+            nudge_x     = 0.25,
+            size        = 3.2,
+            fontface    = "bold",
+            inherit.aes = FALSE) +
+  scale_fill_manual(values  = career_colors) +
+  scale_color_manual(values = career_colors) +
+  scale_x_continuous(breaks = 0:6) +
+  labs(
+    title    = "Training Sessions Last Year by Attrition",
+    subtitle = "Dashed lines show group means",
+    x        = "Number of Training Sessions (Last Year)",
+    y        = "Density",
+    fill     = "Attrition",
+    color    = "Attrition"
+  ) +
+  theme_career
 
-table(df_clean$attrition, df_clean$years_at_company)
+print(p_obj3_2)
 
-p_obj3_2 <- ggplot(df_clean,
-                   aes(x = attrition,
-                       y = years_at_company)) +
-  geom_boxplot() +
-  labs(title = "Years at Company vs Attrition",
-       x = "Attrition",
-       y = "Years at Company") +
-  theme_minimal()
-
-p_obj3_2
+# Conclusion:
+# Both groups receive a similar number of training sessions on average,
+# yet the density curves show that employees who left are slightly more
+# concentrated at the lower end of the training frequency spectrum (0–2
+# sessions). This suggests that while training volume alone is not a
+# decisive factor, employees who feel under-invested in professionally
+# — receiving minimal development opportunities — are modestly more
+# inclined to leave. Training therefore serves as a retention signal
+# beyond mere skill acquisition.
 
 
 # -----------------------------------------------------------------------------
-# 7.3 Years in Current Role vs Attrition (Additional Insight)
+# p_obj3_3 — Attrition Rate by Job Level (Stacked Proportion Bar)
+# Purpose: Identify which seniority tiers face the greatest turnover risk
 # -----------------------------------------------------------------------------
+p_obj3_3 <- df_clean %>%
+  count(job_level, attrition) %>%
+  group_by(job_level) %>%
+  mutate(
+    pct   = n / sum(n),
+    label = paste0(round(pct * 100, 1), "%")
+  ) %>%
+  ggplot(aes(x    = factor(job_level),
+             y    = pct,
+             fill = attrition)) +
+  geom_col(position = "fill", alpha = 0.85, width = 0.6) +
+  geom_text(aes(label = label),
+            position = position_fill(vjust = 0.5),
+            size     = 3.5,
+            fontface = "bold",
+            color    = "white") +
+  scale_fill_manual(values = career_colors) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(
+    title    = "Attrition Proportion by Job Level",
+    subtitle = "Level 1 = Entry-level, Level 5 = Executive",
+    x        = "Job Level",
+    y        = "Proportion (%)",
+    fill     = "Attrition"
+  ) +
+  theme_career
 
-p_obj3_3 <- ggplot(df_clean,
-                   aes(x = years_in_current_role,
-                       fill = attrition)) +
-  geom_density(alpha = 0.4) +
-  labs(title = "Years in Current Role vs Attrition",
-       x = "Years in Current Role",
-       y = "Density") +
-  theme_minimal()
+print(p_obj3_3)
 
-p_obj3_3
-
-
+# Conclusion:
+# Attrition is steeply concentrated at Job Level 1 (entry-level), where
+# turnover can exceed that of all other levels combined. This pattern is
+# consistent with a "revolving door" effect at the bottom of the hierarchy,
+# where limited perceived advancement, lower pay, and higher workload
+# intensity all converge. As job level increases, attrition declines
+# steadily — suggesting that career progression itself acts as an organic
+# retention mechanism once employees move beyond the entry tier.
 
 
+# -----------------------------------------------------------------------------
+# p_obj3_4 — Role Stagnation Index by Job Level (Grouped Bar)
+# Purpose: Detect role stagnation — employees stuck in the same role relative
+#          to their tenure (high ratio signals stagnation)
+# -----------------------------------------------------------------------------
+p_obj3_4 <- df_clean %>%
+  mutate(
+    role_tenure_ratio = ifelse(
+      years_at_company == 0, 0,
+      years_in_current_role / years_at_company
+    )
+  ) %>%
+  group_by(job_level, attrition) %>%
+  summarise(
+    avg_ratio = round(mean(role_tenure_ratio, na.rm = TRUE), 3),
+    n         = n(),
+    .groups   = "drop"
+  ) %>%
+  ggplot(aes(x    = factor(job_level),
+             y    = avg_ratio,
+             fill = attrition)) +
+  geom_col(position = "dodge", alpha = 0.85, width = 0.65) +
+  geom_text(aes(label = round(avg_ratio, 2)),
+            position = position_dodge(width = 0.65),
+            vjust    = -0.4,
+            size     = 3,
+            fontface = "bold") +
+  scale_fill_manual(values = career_colors) +
+  scale_y_continuous(
+    labels = percent_format(),
+    expand = expansion(mult = c(0, 0.15))
+  ) +
+  labs(
+    title    = "Role Stagnation Index by Job Level and Attrition",
+    subtitle = "Ratio = Years in Current Role ÷ Years at Company\nHigher ratio = longer time spent in the same role relative to tenure",
+    x        = "Job Level",
+    y        = "Role Stagnation Index (%)",
+    fill     = "Attrition"
+  ) +
+  theme_career
+
+print(p_obj3_4)
+
+# Conclusion:
+# The Role Stagnation Index (years in current role divided by total tenure)
+# reveals that at Job Levels 1 and 2, leavers exhibit a higher stagnation
+# ratio than stayers — meaning they spent a disproportionately large share
+# of their company tenure in the same role before quitting. This is a
+# concrete signal that role immobility, rather than tenure length alone,
+# is driving early and mid-career attrition. At higher job levels the gap
+# narrows, reinforcing that career velocity matters most for junior employees.
+
+
+# --- Display all 4 plots in a 2×2 grid ---
+grid.arrange(p_obj3_1, p_obj3_2, p_obj3_3, p_obj3_4,
+             ncol = 2,
+             top  = "OBJECTIVE 3: Career Growth / Stagnation & Attrition Analysis")
+
+
+# =============================================================================
+# 7.3.3  STATISTICAL TESTS
+# Purpose: Confirm that the visual patterns above are statistically
+#          significant and not the result of random sampling variation
+# =============================================================================
+
+cat("\n--- Statistical Tests: Career Growth vs Attrition ---\n")
+
+# --- Test 1: Wilcoxon Rank-Sum — Years Since Last Promotion ---
+# WHY Wilcoxon (not t-test): years_since_last_promotion is right-skewed
+# (many 0 s, long tail), so non-parametric test is more appropriate
+wilcox_promo <- wilcox.test(years_since_last_promotion ~ attrition,
+                            data = df_clean,
+                            exact = FALSE)
+
+promo_medians <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(med = median(years_since_last_promotion, na.rm = TRUE),
+            .groups = "drop")
+
+cat("\n1. Wilcoxon Rank-Sum: Years Since Last Promotion vs Attrition\n")
+cat("   Median (Stayed) :", promo_medians$med[promo_medians$attrition == "No"],  "years\n")
+cat("   Median (Left)   :", promo_medians$med[promo_medians$attrition == "Yes"], "years\n")
+cat("   W-statistic     :", round(wilcox_promo$statistic, 4), "\n")
+cat("   P-value         :", round(wilcox_promo$p.value, 6), "\n")
+cat("   Result          :", ifelse(wilcox_promo$p.value < 0.05,
+                                   "SIGNIFICANT — promotion gap differs between groups",
+                                   "NOT significant"), "\n")
+
+
+# --- Test 2: Wilcoxon Rank-Sum — Training Times Last Year ---
+# WHY Wilcoxon: training counts are discrete integers (0–6), not normally
+# distributed, so a rank-based test is more reliable than a t-test
+wilcox_train <- wilcox.test(training_times_last_year ~ attrition,
+                            data = df_clean,
+                            exact = FALSE)
+
+train_medians <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(med = median(training_times_last_year, na.rm = TRUE),
+            .groups = "drop")
+
+cat("\n2. Wilcoxon Rank-Sum: Training Times Last Year vs Attrition\n")
+cat("   Median (Stayed) :", train_medians$med[train_medians$attrition == "No"],  "sessions\n")
+cat("   Median (Left)   :", train_medians$med[train_medians$attrition == "Yes"], "sessions\n")
+cat("   W-statistic     :", round(wilcox_train$statistic, 4), "\n")
+cat("   P-value         :", round(wilcox_train$p.value, 6), "\n")
+cat("   Result          :", ifelse(wilcox_train$p.value < 0.05,
+                                   "SIGNIFICANT — training frequency differs between groups",
+                                   "NOT significant"), "\n")
+
+
+# --- Test 3: Chi-Square — Job Level vs Attrition ---
+# WHY Chi-Square: job_level is ordinal/categorical and attrition is binary —
+# testing for association between two categorical variables
+chisq_joblevel <- chisq.test(
+  table(df_clean$job_level, df_clean$attrition)
+)
+
+cat("\n3. Chi-Square: Job Level vs Attrition\n")
+cat("   Chi-square statistic :", round(chisq_joblevel$statistic, 4), "\n")
+cat("   Degrees of freedom   :", chisq_joblevel$parameter, "\n")
+cat("   P-value              :", round(chisq_joblevel$p.value, 6), "\n")
+cat("   Result               :", ifelse(chisq_joblevel$p.value < 0.05,
+                                        "SIGNIFICANT — job level is associated with attrition",
+                                        "NOT significant"), "\n")
+
+
+# --- Test 4: Wilcoxon Rank-Sum — Years in Current Role ---
+# Secondary check: complements the stagnation index visual (Plot 4)
+wilcox_role <- wilcox.test(years_in_current_role ~ attrition,
+                           data = df_clean,
+                           exact = FALSE)
+
+role_medians <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(med = median(years_in_current_role, na.rm = TRUE),
+            .groups = "drop")
+
+cat("\n4. Wilcoxon Rank-Sum: Years in Current Role vs Attrition\n")
+cat("   Median (Stayed) :", role_medians$med[role_medians$attrition == "No"],  "years\n")
+cat("   Median (Left)   :", role_medians$med[role_medians$attrition == "Yes"], "years\n")
+cat("   W-statistic     :", round(wilcox_role$statistic, 4), "\n")
+cat("   P-value         :", round(wilcox_role$p.value, 6), "\n")
+cat("   Result          :", ifelse(wilcox_role$p.value < 0.05,
+                                   "SIGNIFICANT — role tenure differs between groups",
+                                   "NOT significant"), "\n")
+
+
+# --- Consolidate all results into one tidy summary table ---
+career_stats <- tibble(
+  test      = c("Wilcoxon", "Wilcoxon", "Chi-Square", "Wilcoxon"),
+  variable  = c("Years Since Last Promotion",
+                "Training Times Last Year",
+                "Job Level",
+                "Years in Current Role"),
+  statistic = c(round(wilcox_promo$statistic,   4),
+                round(wilcox_train$statistic,   4),
+                round(chisq_joblevel$statistic, 4),
+                round(wilcox_role$statistic,    4)),
+  p_value   = c(round(wilcox_promo$p.value,   6),
+                round(wilcox_train$p.value,   6),
+                round(chisq_joblevel$p.value, 6),
+                round(wilcox_role$p.value,    6)),
+  significant = ifelse(
+    c(wilcox_promo$p.value, wilcox_train$p.value,
+      chisq_joblevel$p.value, wilcox_role$p.value) < 0.05,
+    "YES ***", "NO"
+  ),
+  conclusion = c(
+    ifelse(wilcox_promo$p.value < 0.05,
+           "Promotion drought significantly higher for leavers",
+           "No significant difference in promotion timing"),
+    ifelse(wilcox_train$p.value < 0.05,
+           "Training frequency significantly differs by attrition",
+           "No significant difference in training frequency"),
+    ifelse(chisq_joblevel$p.value < 0.05,
+           "Job level significantly associated with attrition",
+           "No significant association between job level and attrition"),
+    ifelse(wilcox_role$p.value < 0.05,
+           "Years in current role significantly differs by attrition",
+           "No significant difference in role tenure")
+  )
+)
+
+cat("\n--- Career Growth Statistical Results Summary ---\n")
+print(career_stats)
+
+message("\n[OK] Section 7.3 Career Growth / Stagnation Analysis complete.")
