@@ -840,3 +840,54 @@ p_obj2_2 <- df_clean %>%
   OBJ1_THEME
 
 print(p_obj2_2)
+
+
+# =============================================================================
+# 7.3 ANALYSIS 2-3: DISTANCE FROM HOME × ATTRITION  (Kruskal-Wallis + Violin)
+# =============================================================================
+message("\n--- 7.3 Distance from Home × Attrition (Kruskal-Wallis) ---")
+
+# A. WHY Kruskal-Wallis? — Verify distance is NOT normally distributed
+hist(df_clean$distance_from_home, breaks = 20, col = COLOR_BAR,
+     main = "Distance from Home Distribution (Normality Check)",
+     xlab = "Distance (km)")
+# Observation: right-skewed distribution → t-test assumptions violated → use KW
+
+# B. Non-Parametric Test
+# distance_from_home split by (~) attrition
+dist_kw <- kruskal.test(distance_from_home ~ attrition, data = df_clean)
+cat("Kruskal-Wallis Results:\n")
+print(dist_kw)
+
+# C. Group Medians
+dist_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    n           = n(),
+    median_dist = median(distance_from_home),
+    mean_dist   = round(mean(distance_from_home), 1),
+    .groups     = "drop"
+  )
+cat("\nDistance Summary by Attrition:\n")
+print(dist_summary)
+
+# D. Visualization — Violin + Boxplot with Median Annotation
+p_obj2_3 <- df_clean %>%
+  ggplot(aes(x = attrition, y = distance_from_home, fill = attrition)) +
+  geom_violin(width = 1, alpha = 0.5, colour = NA, show.legend = FALSE) +
+  geom_boxplot(width = 0.2, colour = "black", outlier.shape = NA, alpha = 0.8, show.legend = FALSE) +
+  # Annotate median values directly on the plot
+  geom_text(data = dist_summary,
+            aes(x = attrition, y = median_dist,
+                label = paste("Mdn =", median_dist)),
+            vjust = -1.2, fontface = "bold", size = 4) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "The Commute Penalty: Distance & Attrition",
+    subtitle = paste("Kruskal-Wallis p =", round(dist_kw$p.value, 4),
+                      "  |  Non-parametric (distance is right-skewed)"),
+    x = "Attrition", y = "Distance from Home (km)"
+  ) +
+  OBJ1_THEME
+
+print(p_obj2_3)
