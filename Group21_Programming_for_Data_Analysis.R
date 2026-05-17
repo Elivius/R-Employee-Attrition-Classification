@@ -723,10 +723,10 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # Each group member writes their assigned objective below this line
 # =============================================================================
 
-#Section 7.1 Objective 1: Compensation
-#Name: Joshua Yeo Jing Hao TP077315
+# Section 7.1 Objective 1: Compensation
+# Name: Joshua Yeo Jing Hao TP077315
 
-#Theme Settings
+# Theme Settings
 theme_comp <- theme_minimal(base_size = 13) +
   theme(
     plot.title       = element_text(face = "bold", size = 14, hjust = 0.5),
@@ -744,7 +744,7 @@ cat("\n=== OBJECTIVE 1: COMPENSATION ANALYSIS ===\n")
 cat("Variables: MonthlyIncome, PercentSalaryHike, StockOptionLevel\n")
 cat("Hypothesis: Lower compensation is significantly associated with higher attrition\n\n")
 
-#Section 7.2 Descriptive Analysis
+# Section 7.2 Descriptive Analysis
 # ====================================
 
 cat("--- Compensation Summary by Attrition Group ---\n")
@@ -770,7 +770,7 @@ cat("\nRow percentages:\n")
 print(round(prop.table(stock_table, margin = 1) * 100, 1))
 
 
-#Section 7.2: Visualization
+# Section 7.2: Visualization
 
 # --- Preparation: calculate summary stats for annotations ---
 # Calculate summary stats for labels
@@ -790,7 +790,7 @@ hike_summary <- df_clean %>%
     .groups   = "drop"
   )
 
-#Plot 1: To investigate relationship of monthly income and attrition
+# Plot 1: To investigate relationship of monthly income and attrition
 plot1a <- ggplot(df_clean,
               aes(x = attrition, y = monthly_income, fill = attrition)) +
   geom_boxplot(alpha = 0.7, outlier.alpha = 0.2,
@@ -815,13 +815,8 @@ plot1a <- ggplot(df_clean,
 
 print(plot1a)
 
-#Conclusion:
-#"The visual analysis of Monthly Income Distribution reveals a significant disparity between the two groups. 
-#Employees who remained with the organization (Median $\approx$ RM5,000) earn more than those who left (Median $\approx$ RM4,000). 
-#Furthermore, the density of individual data points (jitter) shows that attrition is most prevalent among those earning below RM7,500, with very few instances of attrition occurring in the high-income brackets (above RM15,000). 
-#This suggests that financial compensation acts as a strong retention factor."
 
-#Plot 2: To investigate relationship between salary hike% and attrition
+# Plot 2: To investigate relationship between salary hike% and attrition
 # Reveals if employees who left received smaller raises
 plot1b <- ggplot(df_clean %>% filter(!is.na(percent_salary_hike)),
               aes(x     = percent_salary_hike,
@@ -854,12 +849,7 @@ plot1b <- ggplot(df_clean %>% filter(!is.na(percent_salary_hike)),
 
 print(plot1b)
 
-#Conclusion:
-#The average salary hike percentage is practically identical for employees who stay and employees who leave.
-#Interestingly, a minor increase in attrition density is observed at the extreme high end of the scale (22%–24%).
-#This suggests that absolute percentage raises do not act as a primary retention mechanism in isolation, and high raises alone are insufficient to mitigate other underlying push factors.
-
-#Plot 3: To investigate relationship between stock option and attrition
+# Plot 3: To investigate relationship between stock option and attrition
 plot1c <- df_clean %>%
   count(stock_option_level, attrition) %>%
   group_by(stock_option_level) %>%
@@ -887,11 +877,6 @@ plot1c <- df_clean %>%
   theme_comp
 
 print(plot1c)
-
-#Conclusion:
-#"The relationship between Stock Option Level and Attrition displays a distinct U-shaped curve, indicating a non-linear trend.
-#Interestingly, attrition is highest at stock option level 3.
-#This anomaly suggests that while mid-tier equity effectively secures core staff, top-tier stock option structures (typically held by senior executives) do not insulate high-ranking talent from market poaching or strategic exits following stock vesting cycles.
 
 
 # --- Plot 4: Income by Job Level — Deep Dive ---
@@ -926,19 +911,13 @@ plot1d <- df_clean %>%
 
 print(plot1d)
 
-#Conclusion:
-#A critical internal pay gap is identified at Level 1 (Entry-level) and Level 4 (Senior Management). 
-#At Level 4, a stark median income deficit of RM1,833 exists for employees who left compared to their retained peers, signaling severe internal salary compression or inequity that likely catalyzed their exit.
-#Conversely, at Levels 2, 3, and 5, the median income between attrition groups is nearly identical.
-#it indicates that while financial interventions are urgently required to retain talent at Levels 1 and 4, compensation adjustments will likely fail to reduce turnover among mid-level (Levels 2 and 3) and executive (Level 5) staff, where non-monetary retention drivers must be explored.
-
 # --- Display all 4 plots in a 2x2 grid ---
 grid.arrange(plot1a, plot1b, plot1c, plot1d,
              ncol = 2,
              top  = "OBJECTIVE 1: Compensation & Attrition Analysis")
 
-#==============================
-#Section 7.4 Statistical Tests
+# ==============================
+# Section 7.4 Statistical Tests
 # To prove findings are statistically significant — not just coincidence
 
 cat("\n--- Statistical Tests: Compensation vs Attrition ---\n")
@@ -1016,7 +995,7 @@ comp_stats <- tibble(
 cat("\n--- Compensation Statistical Results Summary ---\n")
 print(comp_stats)
 
-#Section 8.5: What if analysis
+# Section 8.5: What if analysis
 # Simulate the effect of compensation policy changes on attrition
 # Uses the logistic regression model to predict new attrition probabilities
 
@@ -1097,3 +1076,59 @@ cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
 cat("  Predicted rate after policy change:", round(scenario3_rate, 1), "%\n")
 cat("  Predicted reduction               :",
     round(current_rate - scenario3_rate, 1), "%\n")
+
+# Section 7.6: Written Interpretation
+# Summary of the findings of the objective Compensation
+cat("\n\n--- OBJECTIVE 1 FINDINGS & INTERPRETATION ---\n")
+
+income_diff <- round(abs(diff(ttest_income$estimate)), 0)
+hike_diff   <- round(abs(diff(ttest_hike$estimate)), 2)
+
+cat("
+OBJECTIVE 1: COMPENSATION ANALYSIS — KEY FINDINGS
+==================================================
+
+FINDING 1 — Monthly Income
+Employees who left the organisation earned an average of RM",
+income_diff, "less per month
+than those who stayed. This difference was statistically significant
+(p =", round(ttest_income$p.value, 4), "), confirming that monthly income
+is a significant predictor of attrition. Lower-paid employees face
+greater financial motivation to seek better-paying opportunities elsewhere.
+
+FINDING 2 — Salary Hike Percentage
+The average salary hike for employees who left was", round(ttest_hike$estimate[2], 1),
+    "% compared to", round(ttest_hike$estimate[1], 1), "% for those who stayed.
+This", ifelse(ttest_hike$p.value < 0.05, "statistically significant",
+              "non-significant"), "difference (p =", round(ttest_hike$p.value, 4), ")
+suggests that employees receiving smaller annual raises are",
+    ifelse(ttest_hike$p.value < 0.05, "significantly", ""), "more likely
+to leave the organisation.
+
+FINDING 3 — Stock Option Level
+The Chi-Square test revealed a", ifelse(chisq_stock$p.value < 0.05,
+                                        "statistically significant", "non-significant"),
+    "association between stock option level and attrition
+(p =", round(chisq_stock$p.value, 4), "). Employees with no stock options
+(Level 0) showed the highest attrition rate, while those with higher
+stock option levels demonstrated stronger retention — suggesting that
+equity compensation creates meaningful organisational commitment.
+
+WHAT-IF ANALYSIS SUMMARY
+A 10% salary increase across all employees is predicted to reduce
+attrition by", round(current_rate - scenario1_rate, 1), "percentage points.
+Introducing a minimum 15% salary hike policy is predicted to reduce
+attrition by", round(current_rate - scenario2_rate, 1), "percentage points.
+Providing minimum stock options to employees currently receiving none
+is predicted to reduce attrition by",
+    round(current_rate - scenario3_rate, 1), "percentage points.
+
+RECOMMENDATION
+Based on these findings, HR should:
+1. Review salary bands for employees earning below the median income
+   to identify and address cases of salary compression
+2. Implement a minimum salary hike of 15% for high-performing employees
+   to signal investment in their long-term growth
+3. Extend stock option eligibility to all employee levels — particularly
+   junior and mid-level staff who currently receive no equity compensation
+")
