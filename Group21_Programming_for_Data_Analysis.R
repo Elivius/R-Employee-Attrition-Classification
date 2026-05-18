@@ -717,6 +717,421 @@ message("[OK] Clean data saved as CSV and Optimized Parquet.")
 message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 
 # =============================================================================
-# SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
-# Each group member writes their assigned objective below this line
+# SECTION 7 - OBJECTIVE 4: CULTURE DISSATISFACTION
+# Analyst : Lee Hong Yi (TP076604)
+# Variables: environment_satisfaction, job_satisfaction,
+#            relationship_satisfaction, work_life_balance
 # =============================================================================
+# GRAPHS:
+#   7.1  Grouped Bar  — Attrition rate by satisfaction level (all 4 variables)
+#   7.2  Stacked Bar  — Work-life balance: stayed vs left count
+#   7.3  Line Chart   — Composite culture score vs attrition rate
+#   7.4  Heatmap      — Attrition rate across all 4 culture variables
+# =============================================================================
+
+message("[Section 7] Culture Dissatisfaction analysis starting...")
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+# Ordered level sets
+LEVELS_4PT <- c("Low", "Medium", "High", "Very High")
+LEVELS_WLB <- c("Bad", "Good", "Better", "Best")
+
+# Colour palette
+COL_STAYED  <- "#3266AD"   # blue  — stayed
+COL_LEFT    <- "#C0503A"   # coral — left
+COL_NEUTRAL <- "#7F77DD"   # purple — composite chart line
+
+# Variable display labels (for facet headings)
+VAR_LABELS <- c(
+  environment_satisfaction  = "Environment Satisfaction",
+  job_satisfaction          = "Job Satisfaction",
+  relationship_satisfaction = "Relationship Satisfaction"
+)
+
+# Output folder (creates it if it doesn't exist)
+OUTPUT_DIR <- "section7_plots"
+if (!dir.exists(OUTPUT_DIR)) dir.create(OUTPUT_DIR)
+
+# Shared ggplot2 theme — consistent look across all 4 charts
+theme_obj4 <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title       = element_text(face = "bold", size = 13, hjust = 0),
+      plot.subtitle    = element_text(size = 10, color = "grey45", hjust = 0),
+      plot.caption     = element_text(size = 9,  color = "grey55", hjust = 1),
+      axis.title       = element_text(size = 10),
+      axis.text        = element_text(size = 9),
+      legend.position  = "top",
+      legend.title     = element_blank(),
+      legend.text      = element_text(size = 9),
+      panel.grid.major = element_line(color = "grey90"),
+      panel.grid.minor = element_blank(),
+      strip.text       = element_text(face = "bold", size = 10)
+    )
+}
+
+
+# =============================================================================
+# 7.1  GROUPED BAR — Attrition rate by satisfaction level (3 variables)
+# Shows: which satisfaction level has the highest attrition rate per variable
+# Excludes work_life_balance (covered separately in 7.2)
+# =============================================================================
+
+message("\n[7.1] Building grouped bar chart...")
+
+# Build a long table of attrition rates for the 3 ordinal satisfaction vars
+plot71_data <- df_clean %>%
+  select(attrition,
+         environment_satisfaction,
+         job_satisfaction,
+         relationship_satisfaction) %>%
+  pivot_longer(
+    cols      = -attrition,
+    names_to  = "variable",
+    values_to = "level"
+  ) %>%
+  mutate(
+    level    = factor(level, levels = LEVELS_4PT),
+    variable = recode(variable, !!!VAR_LABELS)
+  ) %>%
+  group_by(variable, level) %>%
+  summarise(
+    total         = n(),
+    left          = sum(attrition == "Yes"),
+    attrition_rate = left / total * 100,
+    .groups = "drop"
+  )
+
+plot71 <- ggplot(plot71_data,
+                 aes(x = level, y = attrition_rate, fill = variable)) +
+  
+  geom_col(position = position_dodge(width = 0.75),
+           width = 0.65, colour = "white", linewidth = 0.3) +
+  
+  geom_text(aes(label = sprintf("%.1f%%", attrition_rate)),
+            position = position_dodge(width = 0.75),
+            vjust = -0.5, size = 2.9, fontface = "bold") +
+  
+  scale_fill_manual(values = c(
+    "Environment Satisfaction"  = COL_LEFT,
+    "Job Satisfaction"          = COL_STAYED,
+    "Relationship Satisfaction" = "#1D7A5F"
+  )) +
+  
+  scale_y_continuous(
+    labels = label_percent(scale = 1),
+    limits = c(0, 28),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  
+  labs(
+    title    = "Attrition rate by satisfaction level",
+    subtitle = "Low satisfaction consistently produces the highest attrition across all three dimensions",
+    x        = "Satisfaction level",
+    y        = "Attrition rate (%)",
+    caption  = "Source: employee_attrition_cleaned.csv | Objective 4 — Culture Dissatisfaction"
+  ) +
+  theme_obj4()
+
+print(plot71)
+ggsave(file.path(OUTPUT_DIR, "7.1_grouped_bar_satisfaction.png"),
+       plot71, width = 9, height = 5.5, dpi = 150)
+message("[OK] 7.1 saved.")
+
+
+# =============================================================================
+# 7.2  STACKED BAR — Work-life balance: stayed vs left
+# Shows: volume of employees at each WLB level and proportion who left
+# WLB uses a different 4-level scale (Bad/Good/Better/Best) — treated separately
+# =============================================================================
+
+message("\n[7.2] Building stacked bar chart...")
+
+plot72_data <- df_clean %>%
+  mutate(work_life_balance = factor(work_life_balance, levels = LEVELS_WLB)) %>%
+  count(work_life_balance, attrition) %>%
+  group_by(work_life_balance) %>%
+  mutate(
+    total          = sum(n),
+    attrition_pct  = n / total * 100
+  ) %>%
+  ungroup()
+
+# Rate label — shown only on the "Yes" bar segment for readability
+rate_labels <- plot72_data %>%
+  filter(attrition == "Yes") %>%
+  mutate(label = sprintf("%.1f%%\nleft", attrition_pct))
+
+plot72 <- ggplot(plot72_data,
+                 aes(x = work_life_balance, y = n, fill = attrition)) +
+  
+  geom_col(position = "stack", width = 0.6,
+           colour = "white", linewidth = 0.4) +
+  
+  # Attrition rate label on the "Left" segment
+  geom_text(data = rate_labels,
+            aes(x = work_life_balance, y = n / 2, label = label),
+            colour = "white", size = 3, fontface = "bold",
+            inherit.aes = FALSE) +
+  
+  # Total count on top of each bar
+  geom_text(data = plot72_data %>% group_by(work_life_balance) %>%
+              summarise(total = sum(n), .groups = "drop"),
+            aes(x = work_life_balance, y = total + 20,
+                label = paste0("n=", total)),
+            inherit.aes = FALSE,
+            size = 2.9, colour = "grey40") +
+  
+  scale_fill_manual(
+    values = c("No" = COL_STAYED, "Yes" = COL_LEFT),
+    labels = c("No" = "Stayed", "Yes" = "Left")
+  ) +
+  
+  scale_y_continuous(
+    labels = label_comma(),
+    expand = expansion(mult = c(0, 0.08))
+  ) +
+  
+  labs(
+    title    = "Work-life balance: attrition count breakdown",
+    subtitle = "\"Bad\" balance (29.2%) has the highest attrition rate — nearly double the \"Better\" group",
+    x        = "Work-life balance rating",
+    y        = "Number of employees",
+    caption  = "Source: employee_attrition_cleaned.csv | Objective 4 — Culture Dissatisfaction"
+  ) +
+  theme_obj4()
+
+print(plot72)
+ggsave(file.path(OUTPUT_DIR, "7.2_stacked_bar_wlb.png"),
+       plot72, width = 7, height = 5.5, dpi = 150)
+message("[OK] 7.2 saved.")
+
+
+# =============================================================================
+# 7.3  LINE CHART — Composite culture score vs attrition rate
+# Composite = sum of all 4 satisfaction scores (each mapped 1–4)
+#   4  = lowest possible culture experience (all Low/Bad)
+#   16 = highest possible culture experience (all Very High/Best)
+# Point size encodes group size (n)
+# =============================================================================
+
+message("\n[7.3] Building composite score line chart...")
+
+score_map <- c("Low" = 1, "Medium" = 2, "High" = 3, "Very High" = 4,
+               "Bad" = 1, "Good"   = 2, "Better" = 3, "Best"     = 4)
+
+plot73_data <- df_clean %>%
+  mutate(
+    env_score  = score_map[as.character(environment_satisfaction)],
+    job_score  = score_map[as.character(job_satisfaction)],
+    rel_score  = score_map[as.character(relationship_satisfaction)],
+    wlb_score  = score_map[as.character(work_life_balance)],
+    composite  = env_score + job_score + rel_score + wlb_score
+  ) %>%
+  group_by(composite) %>%
+  summarise(
+    total          = n(),
+    left           = sum(attrition == "Yes"),
+    attrition_rate = left / total * 100,
+    .groups = "drop"
+  ) %>%
+  # Remove very sparse buckets (n < 5) — unreliable rates
+  filter(total >= 5)
+
+plot73 <- ggplot(plot73_data,
+                 aes(x = composite, y = attrition_rate)) +
+  
+  # Shaded ribbon for visual weight
+  geom_area(fill = COL_NEUTRAL, alpha = 0.12) +
+  
+  geom_line(colour = COL_NEUTRAL, linewidth = 1.1) +
+  
+  # Bubble size = group size
+  geom_point(aes(size = total), colour = COL_NEUTRAL,
+             fill = "white", shape = 21, stroke = 1.8) +
+  
+  geom_text(aes(label = sprintf("%.1f%%", attrition_rate)),
+            vjust = -1.1, size = 2.8, colour = "grey30") +
+  
+  scale_x_continuous(
+    breaks = 4:16,
+    labels = c("4\n(all low)", as.character(5:15), "16\n(all high)")
+  ) +
+  
+  scale_y_continuous(
+    labels = label_percent(scale = 1),
+    limits = c(0, 70),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  
+  scale_size_continuous(
+    name   = "Group size (n)",
+    range  = c(3, 10),
+    breaks = c(50, 200, 370)
+  ) +
+  
+  # Annotation: high-risk zone
+  annotate("rect",
+           xmin = 3.5, xmax = 8.5,
+           ymin = 0,   ymax = 70,
+           fill = COL_LEFT, alpha = 0.06) +
+  
+  annotate("text",
+           x = 6, y = 65,
+           label = "High-risk zone\n(score 4–8)",
+           size = 3, colour = COL_LEFT, fontface = "italic") +
+  
+  labs(
+    title    = "Composite culture score vs attrition rate",
+    subtitle = "Employees with all-low scores (4) leave at ~57%; all-high (16) at ~0%",
+    x        = "Composite culture score  (4 = all dissatisfied · 16 = all satisfied)",
+    y        = "Attrition rate (%)",
+    caption  = "Source: employee_attrition_cleaned.csv | Objective 4 — Culture Dissatisfaction"
+  ) +
+  theme_obj4() +
+  theme(legend.position = "right")
+
+print(plot73)
+ggsave(file.path(OUTPUT_DIR, "7.3_line_composite_score.png"),
+       plot73, width = 9, height = 5.5, dpi = 150)
+message("[OK] 7.3 saved.")
+
+
+# =============================================================================
+# 7.4  HEATMAP — Attrition rate across all 4 culture variables × all levels
+# Rows = variables, Columns = satisfaction levels
+# Cell colour = attrition rate (red = high, green = low)
+# =============================================================================
+
+message("\n[7.4] Building heatmap...")
+
+# Build a unified long table using a shared 4-level ordinal for display
+plot74_data <- bind_rows(
+  df_clean %>%
+    mutate(level = factor(environment_satisfaction, levels = LEVELS_4PT)) %>%
+    group_by(level) %>%
+    summarise(total = n(), left = sum(attrition == "Yes"), .groups = "drop") %>%
+    mutate(variable = "Environment\nSatisfaction"),
+  
+  df_clean %>%
+    mutate(level = factor(job_satisfaction, levels = LEVELS_4PT)) %>%
+    group_by(level) %>%
+    summarise(total = n(), left = sum(attrition == "Yes"), .groups = "drop") %>%
+    mutate(variable = "Job\nSatisfaction"),
+  
+  df_clean %>%
+    mutate(level = factor(relationship_satisfaction, levels = LEVELS_4PT)) %>%
+    group_by(level) %>%
+    summarise(total = n(), left = sum(attrition == "Yes"), .groups = "drop") %>%
+    mutate(variable = "Relationship\nSatisfaction"),
+  
+  df_clean %>%
+    mutate(level = factor(work_life_balance, levels = LEVELS_WLB,
+                          labels = LEVELS_4PT)) %>%   # remap labels to shared axis
+    group_by(level) %>%
+    summarise(total = n(), left = sum(attrition == "Yes"), .groups = "drop") %>%
+    mutate(variable = "Work-Life\nBalance")
+) %>%
+  mutate(
+    attrition_rate = left / total * 100,
+    variable = factor(variable, levels = c(
+      "Environment\nSatisfaction",
+      "Job\nSatisfaction",
+      "Relationship\nSatisfaction",
+      "Work-Life\nBalance"
+    )),
+    level = factor(level, levels = LEVELS_4PT)
+  )
+
+plot74 <- ggplot(plot74_data,
+                 aes(x = level, y = variable, fill = attrition_rate)) +
+  
+  geom_tile(colour = "white", linewidth = 1.2) +
+  
+  # Rate label
+  geom_text(aes(
+    label  = sprintf("%.1f%%", attrition_rate),
+    colour = attrition_rate > 20   # white text on dark tiles
+  ),
+  size = 4, fontface = "bold") +
+  
+  # n label (below rate)
+  geom_text(aes(label = paste0("n=", total)),
+            vjust = 2.2, size = 2.7, colour = "grey30") +
+  
+  scale_fill_gradient2(
+    low      = "#9FE1CB",   # teal — low attrition (good)
+    mid      = "#FAC775",   # amber — mid
+    high     = "#C0503A",   # coral — high attrition (bad)
+    midpoint = 17,
+    name     = "Attrition rate (%)",
+    labels   = label_percent(scale = 1)
+  ) +
+  
+  scale_colour_manual(values = c("FALSE" = "grey20", "TRUE" = "white"),
+                      guide = "none") +
+  
+  scale_x_discrete(
+    labels = c(
+      "Low"       = "Low\n(Bad)",
+      "Medium"    = "Medium\n(Good)",
+      "High"      = "High\n(Better)",
+      "Very High" = "Very High\n(Best)"
+    )
+  ) +
+  
+  labs(
+    title    = "Attrition rate heatmap — culture dissatisfaction variables",
+    subtitle = "Darker red = higher attrition risk. Work-life balance (Bad) is the most critical cell at 29.2%",
+    x        = "Satisfaction level",
+    y        = NULL,
+    caption  = "Source: employee_attrition_cleaned.csv | Objective 4 — Culture Dissatisfaction"
+  ) +
+  theme_obj4() +
+  theme(
+    legend.position  = "right",
+    panel.grid       = element_blank(),
+    axis.text.y      = element_text(size = 10, lineheight = 1.1)
+  )
+
+print(plot74)
+ggsave(file.path(OUTPUT_DIR, "7.4_heatmap_culture.png"),
+       plot74, width = 9, height = 4.5, dpi = 150)
+message("[OK] 7.4 saved.")
+
+
+# =============================================================================
+# SUMMARY PRINT — key findings for report write-up
+# =============================================================================
+
+message("\n========================================================")
+message("  SECTION 7 KEY FINDINGS — Culture Dissatisfaction")
+message("========================================================")
+
+findings <- df_clean %>%
+  mutate(across(c(environment_satisfaction, job_satisfaction,
+                  relationship_satisfaction), ~ factor(., levels = LEVELS_4PT)),
+         work_life_balance = factor(work_life_balance, levels = LEVELS_WLB)) %>%
+  summarise(
+    env_low_rate  = mean(attrition[environment_satisfaction  == "Low"]  == "Yes") * 100,
+    job_low_rate  = mean(attrition[job_satisfaction          == "Low"]  == "Yes") * 100,
+    rel_low_rate  = mean(attrition[relationship_satisfaction == "Low"]  == "Yes") * 100,
+    wlb_bad_rate  = mean(attrition[work_life_balance         == "Bad"]  == "Yes") * 100,
+    env_high_rate = mean(attrition[environment_satisfaction  == "Very High"] == "Yes") * 100,
+    job_high_rate = mean(attrition[job_satisfaction          == "Very High"] == "Yes") * 100
+  )
+
+cat(sprintf("  Env. satisfaction  — Low: %.1f%%  vs Very High: %.1f%%\n",
+            findings$env_low_rate, findings$env_high_rate))
+cat(sprintf("  Job satisfaction   — Low: %.1f%%  vs Very High: %.1f%%\n",
+            findings$job_low_rate, findings$job_high_rate))
+cat(sprintf("  Rel. satisfaction  — Low: %.1f%%\n", findings$rel_low_rate))
+cat(sprintf("  Work-life balance  — Bad: %.1f%%  (highest single risk factor)\n",
+            findings$wlb_bad_rate))
+cat(sprintf("  Plots saved to   : %s/\n", OUTPUT_DIR))
+message("========================================================\n")
+
+message("[OK] Section 7 complete.")
