@@ -728,7 +728,6 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 
 
 # --- 7.1 Verify Parquet File Exists Before Reading ---
-# --- 7.0 Verify Parquet File Exists Before Reading ---
 if (!file.exists(OUTPUT_PARQUET)) {
   stop(
     "\n[ERROR] Parquet file not found: '", OUTPUT_PARQUET, "'\n",
