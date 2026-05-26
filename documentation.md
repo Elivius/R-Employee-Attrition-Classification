@@ -217,6 +217,42 @@ Reading from the Forest Plot (`burnout model - what predicts attrition.png`):
 
 **Priority ranking of independent risk factors: Overtime → Single Status → Travel Frequently → Distance from Home.**
 
+### Predictive Application 1 — Employee Flight Risk Scoring
+
+The logistic regression model was applied back to the entire cleaned dataset to generate a **continuous flight risk probability score (0–100%)** for every individual employee. A 50% decision threshold was then used to classify each employee as predicted to leave ("Yes") or stay ("No").
+
+```r
+df_logit$flight_risk_pct      <- predict(model_burnout, newdata = df_logit, type = "response")
+df_logit$predicted_attrition  <- ifelse(df_logit$flight_risk_pct >= 0.5, "Yes", "No")
+```
+
+This transforms the model from a descriptive/explanatory tool into a **live HR risk dashboard** — each employee now has a personalised, model-derived attrition probability attached to their record. HR can sort this list in descending order and prioritise retention conversations with the employees carrying the highest scores, before they resign.
+
+> **[Insert screenshot of R code and output: head() showing over_time, business_travel, flight_risk_pct, predicted_attrition columns]**
+
+### Predictive Application 2 — New Hire Attrition Probability Simulation
+
+Beyond scoring existing employees, the model was used to simulate the attrition probability of a **hypothetical worst-case new hire** — a candidate who is Single, works Overtime, travels Frequently, and lives 25 km from the office:
+
+```r
+new_hire <- data.frame(
+  over_time          = "Yes",
+  business_travel    = "Travel Frequently",
+  distance_from_home = 25,
+  marital_status     = "Single",
+  stringsAsFactors   = TRUE
+)
+new_hire_prediction <- predict(model_burnout, newdata = new_hire, type = "response")
+cat("This candidate has a", round(new_hire_prediction * 100, 1), "% probability of quitting.\n")
+```
+
+This demonstrates that the model can be operationalised as a **pre-hire screening tool**. During the recruitment stage, HR can input a candidate's expected working conditions and personal profile to receive a predicted attrition probability — enabling proactive decisions about onboarding support, role design, or compensation structure before the employee even joins.
+
+> **[Insert screenshot of R code and console output: "This candidate has a XX.X % probability of quitting."]**
+
+**Why This Makes the Model Genuinely Predictive:**
+The two applications above move the analysis definitively from explanatory to predictive. Rather than only answering *"which variables drove attrition in the past?"*, the model now also answers *"what is the probability this specific person will leave in the future?"* — the hallmark of a deployed predictive analytics system.
+
 ---
 
 *(Note: As per assignment guidelines, the Extra Feature section starts on a separate page.)*
