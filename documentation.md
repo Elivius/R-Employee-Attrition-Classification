@@ -14,7 +14,7 @@ Each variable was selected because it captures a distinct dimension of the time-
 - **OverTime** — time stolen from personal life after working hours
 - **BusinessTravel** — energy and time spent away from home and family
 - **DistanceFromHome** — daily commute burden compounding fatigue before and after work
-- **MaritalStatus** — single employees are disproportionately exposed to overtime and last-minute demands, as they are perceived by management as more "available" and are less socially empowered to decline; married and divorced employees, by contrast, carry domestic obligations that act as a natural buffer against excessive workload accumulation
+- **MaritalStatus** — single employees are disproportionately exposed to overtime and last-minute demands, as they are perceived by management as more "available" and are less socially empowered to decline (e.g., being asked to stay late or travel last-minute because they are assumed to have fewer domestic ties); married and divorced employees, by contrast, carry domestic obligations that act as a natural buffer against excessive workload accumulation
 
 ### Hypotheses
 
@@ -134,6 +134,8 @@ A **Chi-Square Test** and **Cramér's V** were applied to assess the relationshi
 - **Business Context:** This pattern is consistent with the Social Buffer Theory. Married and divorced employees typically carry stronger financial and familial commitments — mortgages, dependants, shared finances — that reduce the appeal of job transitions. Single employees, with fewer such anchors, are more geographically and financially mobile, making them more responsive to burnout when workplace pressures accumulate.
 
   A secondary mechanism reinforces this disparity: **Differential Workload Allocation**. Managers may consciously or unconsciously route after-hours demands — late meetings, urgent travel, weekend tasks — toward single employees, who are perceived as having fewer personal obligations and are statistically less likely to decline. Unlike married colleagues who can credibly cite a family dinner or divorced colleagues who may need to collect children, single employees face a higher social cost in refusing. This means single employees are not merely *less buffered* from burnout — they are actively *more exposed* to the operational conditions that produce it. The higher attrition rate among single employees may therefore reflect a structural inequity in workload distribution, not just a difference in personal resilience.
+
+  * **Concrete Scenario Example:** Consider a Friday evening at 6:00 PM when an urgent client issue requires three hours of unscheduled overtime. A manager, wanting to avoid disrupting an employee's family life, might hesitate to ask a married colleague who has a spouse expecting them home. Instead, they turn to a single employee, operating under the assumption that they have "no plans" or fewer responsibilities. The single employee faces a double bind: they lack a socially validated, non-negotiable boundary (like childcare or family commitments) to decline, and stating they simply have "personal plans" is often perceived as a lack of professional dedication. Over time, these small, repeating biases accumulate, leaving the single employee with a significantly higher overtime and burnout burden than their married peers.
 
 **H4 is supported — marital status significantly moderates attrition risk.**
 
