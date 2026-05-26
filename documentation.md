@@ -14,7 +14,7 @@ Each variable was selected because it captures a distinct dimension of the time-
 - **OverTime** — time stolen from personal life after working hours
 - **BusinessTravel** — energy and time spent away from home and family
 - **DistanceFromHome** — daily commute burden compounding fatigue before and after work
-- **MaritalStatus** — employees with a spouse or family experience compounded loss when overtime and long distance reduce their reunion time
+- **MaritalStatus** — single employees are disproportionately exposed to overtime and last-minute demands, as they are perceived by management as more "available" and are less socially empowered to decline; married and divorced employees, by contrast, carry domestic obligations that act as a natural buffer against excessive workload accumulation
 
 ### Hypotheses
 
@@ -129,6 +129,8 @@ A **Chi-Square Test** and **Cramér's V** were applied to assess the relationshi
 - **Effect Size:** Cramér's V = 0.127, indicating a small-to-medium practical association — meaningful at the business level.
 - **Key Finding:** Single employees demonstrate the highest attrition rate at 22.5%, compared to 13.5% for married employees and 11.0% for divorced employees. Single employees are approximately twice as likely to leave as divorced employees.
 - **Business Context:** This pattern is consistent with the Social Buffer Theory. Married and divorced employees typically carry stronger financial and familial commitments — mortgages, dependants, shared finances — that reduce the appeal of job transitions. Single employees, with fewer such anchors, are more geographically and financially mobile, making them more responsive to burnout when workplace pressures accumulate.
+
+  A secondary mechanism reinforces this disparity: **Differential Workload Allocation**. Managers may consciously or unconsciously route after-hours demands — late meetings, urgent travel, weekend tasks — toward single employees, who are perceived as having fewer personal obligations and are statistically less likely to decline. Unlike married colleagues who can credibly cite a family dinner or divorced colleagues who may need to collect children, single employees face a higher social cost in refusing. This means single employees are not merely *less buffered* from burnout — they are actively *more exposed* to the operational conditions that produce it. The higher attrition rate among single employees may therefore reflect a structural inequity in workload distribution, not just a difference in personal resilience.
 
 **H4 is supported — marital status significantly moderates attrition risk.**
 
@@ -273,7 +275,7 @@ The Extra Feature logistic regression confirmed that Overtime, Single status, an
 
 3. **Flexible and Remote Work Arrangements:** To mitigate the Commute Penalty, offer hybrid or remote work options for employees living beyond the dataset median of 7–8 km. While distance did not reach significance as a standalone driver, the logistic regression confirms it contributes cumulatively — particularly for single employees who lack domestic compensating factors.
 
-4. **Targeted Retention Programmes for Single Employees:** Introduce social connection initiatives — mentoring, team events, buddy systems — specifically designed to reduce isolation among single employees. Since marriage acts as a social buffer, organisational culture can partially compensate by strengthening non-domestic social ties within the workplace.
+4. **Equitable Workload Distribution and Retention Support for Single Employees:** Introduce workload fairness audits that track overtime and last-minute task assignments broken down by marital status. If single employees are systematically absorbing a disproportionate share of after-hours demands, this structural inequity should be corrected through explicit manager guidance. In parallel, introduce social connection initiatives — mentoring, team events, buddy systems — to reduce isolation, since organisational culture can partially compensate for the absence of a domestic social buffer.
 
 ### Limitations and Future Direction
 
