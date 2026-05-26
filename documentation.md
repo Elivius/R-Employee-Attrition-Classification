@@ -65,7 +65,7 @@ Interpretation benchmarks for Cramér's V: < 0.10 = weak, 0.10–0.29 = medium, 
 
 ### Analysis Techniques & Justification
 
-A **Chi-Square Test** and **Cramér's V** effect size were applied, visualised via a **Dose-Response Gradient Bar Chart**. By treating Business Travel as an ordered factor (No Travel → Travel Rarely → Travel Frequently), this analysis investigates whether a dose-response gradient exists.
+A **Chi-Square Test** and **Cramér's V** effect size were applied, visualised via a **Proportional Stacked Bar Chart**. By treating Business Travel as an ordered factor (No Travel → Travel Rarely → Travel Frequently), this analysis investigates whether a dose-response relationship exists.
 
 A dose-response relationship is a particularly compelling form of evidence in causal analysis: if each incremental increase in a stressor (travel burden) reliably produces an incremental increase in the outcome (attrition), the argument for a causal link is strengthened considerably beyond what a simple association test can establish. This approach goes beyond standard descriptive analysis by imposing theoretical structure on the data before testing.
 
@@ -73,7 +73,7 @@ A dose-response relationship is a particularly compelling form of evidence in ca
 
 > **[Insert screenshot of R code — Analysis 2-2 section]**
 
-> **[Insert plot: p_obj2_2 — Dose-Response Gradient Bar Chart: Travel Frequency & Attrition]**
+> **[Insert plot: p_obj2_2 — Proportional Stacked Bar Chart: Travel Frequency & Attrition]**
 
 ### Findings & Interpretation
 
