@@ -727,6 +727,8 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # Name: Joshua Yeo Jing Hao TP077315
 
 
+OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
+
 # --- 7.1 Verify Parquet File Exists Before Reading ---
 if (!file.exists(OUTPUT_PARQUET)) {
   stop(
