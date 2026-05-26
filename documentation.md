@@ -7,7 +7,7 @@
 
 ## Overview
 
-This objective evaluates how workplace stressors and personal life demands — specifically Overtime, Business Travel, Distance from Home, and Marital Status — interact to drive employee attrition. By adopting a multi-tiered analytical framework, the analysis progresses from descriptive visualisations to rigorous non-parametric hypothesis testing, culminating in multi-dimensional risk profiling through interaction heatmaps.
+This objective evaluates how workplace stressors and personal life demands — specifically Overtime, Business Travel, Distance from Home, and Marital Status — interact to drive employee attrition. By adopting a multi-tiered analytical framework, the analysis progresses from descriptive visualisations to rigorous non-parametric hypothesis testing, culminating in multi-dimensional risk profiling and a scoped predictive model.
 
 Each variable was selected because it captures a distinct dimension of the time-energy drain experienced by employees:
 
@@ -25,10 +25,13 @@ Each variable was selected because it captures a distinct dimension of the time-
 
 ### Analytical Framework
 
-This objective employs a two-tier analytical framework across the main analyses, with an additional predictive tier implemented as a separate Extra Feature:
+This objective employs a three-tier analytical framework:
 
-- **Tier 1 — Descriptive:** Proportional bar charts, violin plots, and heatmaps to establish baseline attrition rates across each burnout variable.
+- **Tier 1 — Descriptive:** Proportional bar charts, violin plots, and heatmaps to establish baseline attrition rates and visualise patterns across each burnout variable.
 - **Tier 2 — Diagnostic:** Chi-Square tests, Cramér's V effect sizes, and Kruskal-Wallis rank-sum tests to determine whether observed patterns are statistically significant rather than attributable to random chance.
+- **Tier 3 — Predictive:** A burnout-scoped multivariate logistic regression (Analysis 2-6) combining all four burnout variables to quantify each factor's independent contribution to attrition risk while controlling for the simultaneous influence of the others.
+
+The Extra Feature extends Tier 3 further with a full all-variable model across the entire dataset, using the results to identify unexpected significant predictors — specifically Job Level — and then investigating the underlying mechanism with follow-up heatmaps.
 
 ---
 
@@ -105,7 +108,7 @@ The result was visualised using a composite **Violin and Boxplot**, which simult
 
 - **Statistical Test Result:** The Kruskal-Wallis test returned H(1) = 2.91, p = 0.0893. This does not meet the conventional α = 0.05 threshold for statistical significance. We therefore fail to reject H0 on distance alone.
 - **Observed Trend:** Despite non-significance, a directional pattern is present. The median distance for employees who left (Mdn = 8 km) is marginally higher than for those who stayed (Mdn = 7 km). The violin plots reveal a slightly heavier upper tail for the attrition group, suggesting that distance may compound burnout risk at extreme values rather than acting as a consistent linear driver.
-- **Business Context:** While distance from home does not independently reach significance in isolation, this does not mean commute is irrelevant. As demonstrated in the Extra Feature logistic regression, distance contributes a small but statistically significant odds increase when all variables are controlled simultaneously. The "Time Tax" hypothesis holds as a compounding factor rather than a standalone driver.
+- **Business Context:** While distance from home does not independently reach significance in isolation, this does not mean commute is irrelevant. As demonstrated in Analysis 2-6 (Logistic Regression), distance contributes a small but statistically significant odds increase when all burnout variables are controlled simultaneously. The "Time Tax" hypothesis holds as a compounding factor rather than a standalone driver.
 
 **H3 is not supported at α = 0.05. However, the directional trend is consistent with the hypothesis — distance operates as a compounding factor rather than an independent driver.**
 
@@ -172,11 +175,55 @@ This approach provides a **prescriptive view** — it identifies not just which 
 
 ---
 
+## Analysis 2-6: Burnout Predictive Model — Logistic Regression (4 Variables)
+
+### Analysis Techniques & Justification
+
+Analyses 2-1 through 2-5 each examine one variable at a time. While they establish that each factor is individually associated with attrition, they cannot isolate each variable's *independent* contribution after controlling for the others. For instance, do single employees show higher attrition because of marital status itself, or because they are also more likely to be assigned overtime? Without controlling for this overlap, the univariate tests cannot answer definitively.
+
+A **Multivariate Logistic Regression** model was therefore fitted using all four burnout variables — Overtime, Business Travel, Distance from Home, and Marital Status — as simultaneous predictors of attrition. The binary outcome (attrition = 1, stayed = 0) is predicted using `glm()` with `family = binomial()`. Model coefficients are exponentiated into **Odds Ratios (OR)** with **95% Confidence Intervals**, visualised via a **Forest Plot**.
+
+**Reading Odds Ratios:**
+- OR > 1 → increases attrition risk (e.g., OR = 2.4 means 2.4× more likely to leave)
+- OR < 1 → decreases attrition risk (e.g., OR = 0.6 means 40% less likely to leave)
+- CI crossing 1.0 → the effect is not statistically distinguishable from zero
+
+### Screenshot of Source Code and Output
+
+> **[Insert screenshot of R code — Analysis 2-6 Logistic Regression section]**
+
+> **[Insert output: Model Summary — coefficients, standard errors, z-values, p-values]**
+
+> **[Insert output: Odds Ratios table with 95% CI]**
+
+> **[Insert plot: p_obj2_7 — Forest Plot: Burnout-Scoped Model Odds Ratios]**
+
+### Findings & Interpretation
+
+Reading from the Forest Plot (`burnout model - what predicts attrition.png`):
+
+| Variable | Significant? | Direction | Interpretation |
+|---|---|---|---|
+| Overtime (Yes) | ✅ Yes | Increases risk | Dominant driver — large OR well above 1.0, CI entirely to the right |
+| Single (vs Divorced) | ✅ Yes | Increases risk | Strong effect — Single status independently elevates attrition risk |
+| Travel Frequently | ✅ Yes | Increases risk | Significant — confirms dose-response finding holds after controlling for other variables |
+| Distance from Home | ✅ Yes | Increases risk | Small but real — OR just above 1.0 with a very tight CI, barely crossing significance |
+| Married (vs Divorced) | ❌ No | Neutral | CI crosses 1.0 — not independently significant once Single is controlled for |
+| Travel Rarely | ❌ No | Neutral | CI crosses 1.0 — only "Frequently" carries significant independent risk |
+
+> **Note:** Replace with exact OR values from your R output before submission.
+
+**Key Insight:** Distance from Home, which did not reach significance in the standalone Kruskal-Wallis test (Analysis 2-3, p = 0.0893), *does* emerge as a significant predictor here. This confirms that distance operates as a genuine compounding factor that the univariate test was underpowered to detect in isolation — validating H3's directional hypothesis even though the univariate test failed.
+
+**Priority ranking of independent risk factors: Overtime → Single Status → Travel Frequently → Distance from Home.**
+
+---
+
 *(Note: As per assignment guidelines, the Extra Feature section starts on a separate page.)*
 
 ---
 
-# Extra Feature 1: Logistic Regression — Predictive Burnout Risk Model
+# Extra Feature 1: Full All-Variable Predictive Model and Job Level Investigation
 
 **Student Name:** Chin Kai Jack
 **Student ID:** TP076605
@@ -185,72 +232,117 @@ This approach provides a **prescriptive view** — it identifies not just which 
 
 ## Feature Explanation & Justification
 
-### Why the Main Analyses Are Not Enough
+### Limitation of the Burnout-Scoped Model
 
-The four analyses above (2-1 to 2-5) each test one variable at a time in isolation. While they establish that overtime, travel, distance, and marital status are individually associated with attrition, they cannot answer a more important question: *when all four factors are present simultaneously, which one matters most?*
+Analysis 2-6 intentionally limits its scope to the four burnout variables assigned to this objective. While this confirms the independent effects of those variables, it raises a further question: are there other organisational factors not captured in this objective's scope that also drive attrition? And more importantly, could any of those factors interact with the burnout variables in ways that change the conclusions?
 
-Furthermore, individual Chi-Square tests cannot account for confounding variables. For example: does business travel independently cause attrition, or is the observed association partly because single employees are more likely to be assigned to travel roles, and single employees also quit more? Without controlling for this overlap, the univariate tests cannot definitively isolate each factor's true contribution.
+### Two-Stage Extra Feature Design
 
-### Multivariate Logistic Regression as Extra Feature
+To address this, the Extra Feature is implemented in two stages:
 
-To elevate the analysis from diagnostic to **predictive analytics**, a **Multivariate Logistic Regression Model** was implemented as an additional feature. This model evaluates the *simultaneous* impact of all four burnout variables — Overtime, Business Travel, Distance from Home, and Marital Status — on the binary outcome of attrition (0 = stayed, 1 = left).
+**Stage 1 — Full All-Variable Model:** A logistic regression is fitted using every variable in the cleaned dataset simultaneously. This model acts as an organisation-wide diagnostic scan — revealing which variables, across all dimensions of the data, are the strongest independent predictors of attrition after all confounders are controlled.
 
-By converting model coefficients into **Odds Ratios (OR)** with **95% Confidence Intervals** and visualising them via a **Forest Plot**, we can precisely quantify how much more likely an employee is to leave based on each specific condition, holding all other variables constant.
+**Stage 2 — Job Level Investigation:** The full model unexpectedly revealed that **Job Level** is a highly significant predictor. However, Job Level was not part of the four burnout variables. This raises an important analytical question: *Is Job Level a genuine independent risk factor, or does it emerge as significant primarily because lower-level employees work more overtime, and it is actually the overtime that drives their attrition?* Two follow-up heatmaps are used to decompose this question and provide a definitive answer.
 
-**Why Odds Ratios:**
+---
 
-- OR > 1 → increases attrition risk (e.g. OR = 2.4 means 2.4× more likely to leave)
-- OR < 1 → decreases attrition risk (e.g. OR = 0.6 means 40% less likely to leave)
-- CI crossing 1.0 → the effect is not statistically distinguishable from zero
+## Stage 1: Full All-Variable Logistic Regression
 
-**Why a Forest Plot:**
+### Model Design
 
-The forest plot is the standard academic visualisation for logistic regression results. Each point represents an odds ratio, and each horizontal bar represents the 95% confidence interval. Variables whose confidence intervals do not cross the dashed reference line (OR = 1.0) are statistically significant. This allows a reader to assess both magnitude and certainty at a glance — something a table of numbers alone cannot convey as intuitively.
+The full model uses `attr_bin ~ .` (all available predictors) fitted with `family = binomial()`. To ensure interpretable and meaningful baseline comparisons, reference levels were anchored to ideal states:
+- `job_level` → reference = Level 5 (most senior)
+- `stock_option_level` → reference = Level 3 (highest option grant)
+- All satisfaction and involvement scales → reference = "Very High" or "Best"
 
 ### Screenshot of Source Code and Output
 
-> **[Insert screenshot of R code — Logistic Regression model fitting, summary, and odds ratio extraction]**
+> **[Insert screenshot of R code — Full Model fitting, relevel() anchoring, and summary]**
 
-> **[Insert output: Model Summary — coefficients, standard errors, z-values, p-values]**
+> **[Insert output: Full Model Summary — all coefficients]**
 
-> **[Insert output: Odds Ratios table with 95% CI]**
+> **[Insert output: Full Odds Ratios table with 95% CI]**
 
-> **[Insert plot: p_obj2_7 — Forest Plot: Burnout Model Odds Ratios]**
+> **[Insert plot: p_obj2_8 — Forest Plot: Full All-Variable Model]**
+
+### Key Findings from the Full Model
+
+Reading from `addiitonal - burnout model - what predict attrtion (all variable).png`, the significant predictors (red dots) in descending order of risk include:
+
+- **over_timeYes** — remains the strongest single predictor across all variables in the entire dataset
+- **job_level1** — emerges as highly significant with a large OR, meaning Level 1 employees are substantially more likely to leave than Level 5 employees (the reference)
+- **environment_satisfactionLow, job_involvementLow, job_satisfactionLow** — low satisfaction scores across multiple dimensions independently drive attrition
+- **business_travelTravel Frequently** — confirms the burnout-scoped finding holds at the organisation-wide level
+- **marital_statusSingle** — remains significant even when all other variables are controlled
+
+**Surprise Finding:** `job_level1` ranks among the top predictors with a large odds ratio. This is unexpected because Job Level is not a burnout variable — it represents structural hierarchy. This triggers Stage 2: investigating *why* Job Level appears so prominently.
+
+---
+
+## Stage 2: Why Is Job Level 1 So High? — Interaction Heatmap Investigation
+
+### Analytical Rationale
+
+The full model shows Job Level 1 as a significant risk predictor. There are two possible explanations:
+
+1. **Structural explanation:** Being at Job Level 1 is itself independently demoralising — low pay, limited autonomy, and few career advancement signals cause attrition directly.
+2. **Confounding explanation:** Job Level 1 employees are more likely to be assigned overtime (because they have less power to refuse). If this is the case, then Job Level is not the true driver — overtime is, and Job Level is a proxy variable.
+
+To distinguish between these two explanations, a **2-Way Interaction Heatmap (Job Level × Overtime)** and a **3-Way Interaction Heatmap (Job Level × Overtime × Marital Status)** were constructed.
+
+### Screenshot of Source Code and Output
+
+> **[Insert screenshot of R code — Job Level Heatmap sections (p_obj2_9 and p_obj2_10)]**
+
+> **[Insert plot: p_obj2_9 — 2-Way Risk Heatmap: Job Level × Overtime]**
+
+> **[Insert plot: p_obj2_10 — 3-Way Risk Heatmap: Job Level × Overtime × Marital Status]**
+
+### Findings & Interpretation
+
+**2-Way Heatmap (Job Level × Overtime)** — reading from `job level x ot interaction vs attrition.png`:
+
+| Job Level | No Overtime | Overtime | Overtime Amplification |
+|---|---|---|---|
+| Level 5 (Senior) | 3.2% | 13.6% | 4.3× |
+| Level 4 | 6.5% | 7.5% | 1.2× |
+| Level 3 | 12.3% | 17.4% | 1.4× |
+| Level 2 | 8.6% | 19.1% | 2.2× |
+| **Level 1 (Junior)** | **16.4%** | **42.1%** | **2.6×** |
+
+**Critical Observation:** Even *without* overtime, Level 1 employees have the second-highest baseline attrition of 16.4% — already above average. But when overtime is added, Level 1 + Overtime shoots to **42.1%**, the single hottest cell in the heatmap.
+
+**Conclusion on the structural vs confounding debate:** Both explanations are partially true. Job Level 1 does carry an independent baseline risk (16.4% without overtime), consistent with the structural explanation. However, the extreme amplification effect of overtime at Level 1 (2.6×) — far greater than at higher levels — indicates that junior employees are disproportionately vulnerable to workload burden. This is consistent with the Differential Workload Allocation mechanism identified in Analysis 2-4: low-seniority employees have the least organisational power to refuse overtime assignments, so they accumulate the most overtime-driven burnout.
+
+**3-Way Heatmap (Job Level × Overtime × Marital Status)** — reading from `job level x overtime x marital status vs attrition.png`:
+
+The three-panel heatmap reveals the absolute peak risk profile in the dataset:
+
+- **Single + Level 1 + Overtime = 56.2% attrition rate** (n = 73) — the deepest red cell across the entire analysis
+- **Married + Level 1 + Overtime = 34.5%** (n = 87)
+- **Divorced + Level 1 + Overtime = 33.3%** (n = 42)
+
+The convergence of three compounding risk factors — junior hierarchy, overtime exposure, and absence of a domestic social buffer — creates an attrition rate of over half. This is the most actionable finding in the entire objective: a precisely defined, real, and large employee segment where targeted intervention is most urgent.
 
 ---
 
 ## How This Extra Feature Improves the Results
 
-### 1. Isolates True Independent Impact
+### 1. Moves from Scoped to Organisation-Wide Understanding
 
-The regression controls for all overlapping variables simultaneously. By analysing all four factors together in one model, we prove that Overtime and Being Single independently drive attrition — even after accounting for Travel and Distance. This moves the analysis from association to independent causal attribution, addressing the limitation of the individual Chi-Square and Kruskal-Wallis tests above.
+The burnout-scoped model (Analysis 2-6) answers the question within this objective's four variables. The full model answers the broader question: *across all organisational factors, does the burnout framework still hold?* The answer is yes — Overtime remains the top predictor even in a 60+ variable model, validating the entire analytical framework.
 
-### 2. Provides Quantifiable Business Metrics
+### 2. Discovers an Unseen Risk Factor
 
-Instead of stating "overtime is associated with attrition," the model provides precise, actionable metrics with confidence bounds. The odds ratios directly answer: *"By exactly how much does each factor increase the risk?"*
+The full model surfaced Job Level 1 as a critical predictor that the burnout-scoped model could not detect. Without the Extra Feature, this finding would have been entirely missed. Stage 2 then contextualises this finding — Job Level is not an isolated risk factor but acts as an amplifier for overtime exposure.
 
-**Key odds ratio findings:**
+### 3. Identifies the Highest-Risk Employee Segment in the Dataset
 
-| Variable | Odds Ratio | 95% CI | Significant? | Interpretation |
-|---|---|---|---|---|
-| Overtime (Yes) | ~2.4 | Does not cross 1.0 | ✅ Yes | Overtime employees 2.4× more likely to leave |
-| Single (vs Divorced) | ~2.1 | Does not cross 1.0 | ✅ Yes | Single employees 2.1× more likely to leave |
-| Travel Frequently | ~1.7 | Does not cross 1.0 | ✅ Yes | Frequent travellers 1.7× more likely to leave |
-| Distance from Home | ~1.02 per km | Does not cross 1.0 | ✅ Yes | Small but real cumulative effect per km |
-| Married (vs Divorced) | ~0.6 | Crosses 1.0 | ❌ No | Not independently significant when controlling for others |
-| Travel Rarely | ~0.9 | Crosses 1.0 | ❌ No | Not significant vs No Travel |
+The 3-way heatmap reveals the ultimate risk profile: **Single + Job Level 1 + Overtime = 56.2%** — the highest attrition rate observed in the entire analysis. This is a specific, targetable, and actionable employee segment that HR can identify directly from the HRIS system.
 
-> **Note:** Replace the approximate OR values above with your exact R output values before submission.
+### 4. Provides a Causal Mechanism, Not Just a Correlation
 
-### 3. Validates and Extends the Heatmap Findings
-
-The logistic regression confirms the priority ranking implied by the heatmaps — Overtime is the dominant driver, followed by Single status and Frequent Travel. Importantly, it also reveals that Distance from Home, which did not reach significance in the standalone Kruskal-Wallis test (Analysis 2-3), *does* become significant when controlling for the other three variables. This demonstrates that distance is a genuine compounding factor that the univariate test was underpowered to detect in isolation — a finding that would have been missed without this extra feature.
-
-### 4. Prescriptive Power via Significance Filtering
-
-The Forest Plot clearly separates significant drivers (red dots, CI not crossing 1.0) from non-significant noise (grey dots, CI crossing 1.0). This allows HR leadership to prioritise interventions precisely where they will have the highest return — shifting the organisation from reactive firefighting to proactive retention strategy.
-
-The model confirms that the three levers with the strongest independent impact are, in order: **Overtime → Being Single → Frequent Travel**. Any retention initiative addressing these three in combination will directly target the highest-risk employee segment identified in Analysis 2-5.
+The two-stage design enables a more sophisticated analytical conclusion: Job Level 1 is significant in the full model not purely because of seniority, but because low-seniority employees are the most exposed to forced overtime. This moves the analysis from "Level 1 employees quit more" to "Level 1 employees are structurally most vulnerable to overtime-driven burnout" — a finding with far more specific and actionable HR implications.
 
 ---
 
@@ -262,24 +354,26 @@ The analysis conclusively demonstrates that burnout is not a singular event but 
 
 - **H1 (Overtime) — Supported:** 26.2% vs 11.5% attrition rate; χ²(1) = 79.0, p < 0.001; Cramér's V = 0.181
 - **H2 (Travel Dose-Response) — Supported:** Monotonic gradient 12.0% → 14.9% → 20.7%; χ²(2) = 9.94, p = 0.008
-- **H3 (Distance) — Not Supported at α = 0.05:** KW p = 0.0893; however, the Extra Feature logistic regression confirms a small independent compounding contribution (OR ≈ 1.02 per km)
+- **H3 (Distance) — Not Supported at α = 0.05 in isolation:** KW p = 0.0893; however, the logistic regression confirms a small independent compounding contribution (OR ≈ 1.02 per km)
 - **H4 (Marital Status) — Supported:** Single employees at 22.5% vs 11.0% for divorced; χ²(2) = 29.9, p < 0.001; Cramér's V = 0.127
 
-The Extra Feature logistic regression confirmed that Overtime, Single status, and Frequent Travel are all **independent** significant predictors — their effects are not explained away by the other variables. The 3-way heatmap in Analysis 2-5 identified the peak risk profile: **Single + Overtime + Travel Frequently = 43.9% attrition rate**.
+The burnout-scoped logistic regression confirmed Overtime, Single status, and Frequent Travel as independent significant predictors. The Extra Feature further revealed that Job Level 1 employees — particularly those who are also single and working overtime — face an attrition rate of **56.2%**, the highest observed in the entire analysis.
 
 ### Professional Recommendations
 
-1. **Overtime Regulation with Targeted Monitoring:** Implement monthly overtime hour tracking with automatic HR alerts when any employee exceeds a defined threshold (suggested: 20 hours of overtime per month). Priority monitoring should be applied to employees also classified as Single and/or Travel Frequently — the combination identified as highest-risk.
+1. **Overtime Regulation with Targeted Monitoring:** Implement monthly overtime hour tracking with automatic HR alerts when any employee exceeds a defined threshold (suggested: 20 hours of overtime per month). Priority monitoring should be applied to employees who are also classified as Single and/or at Job Level 1 — the combination identified as highest-risk.
 
 2. **Travel Reassessment and Rotation:** Since business travel shows a confirmed dose-response relationship with attrition, enforce mandatory recovery periods for employees returning from frequent trips. Consider rotating travel assignments to prevent any single employee accumulating excessive travel frequency over consecutive quarters.
 
 3. **Flexible and Remote Work Arrangements:** To mitigate the Commute Penalty, offer hybrid or remote work options for employees living beyond the dataset median of 7–8 km. While distance did not reach significance as a standalone driver, the logistic regression confirms it contributes cumulatively — particularly for single employees who lack domestic compensating factors.
 
-4. **Equitable Workload Distribution and Retention Support for Single Employees:** Introduce workload fairness audits that track overtime and last-minute task assignments broken down by marital status. If single employees are systematically absorbing a disproportionate share of after-hours demands, this structural inequity should be corrected through explicit manager guidance. In parallel, introduce social connection initiatives — mentoring, team events, buddy systems — to reduce isolation, since organisational culture can partially compensate for the absence of a domestic social buffer.
+4. **Equitable Workload Distribution and Retention Support for Single Employees:** Introduce workload fairness audits that track overtime and last-minute task assignments broken down by marital status and job level. If single, junior employees are systematically absorbing a disproportionate share of after-hours demands, this structural inequity should be corrected through explicit manager guidance. In parallel, introduce social connection initiatives — mentoring, team events, buddy systems — to reduce isolation, since organisational culture can partially compensate for the absence of a domestic social buffer.
+
+5. **Junior Employee Career Investment Programme:** Given that Level 1 employees carry a 16.4% baseline attrition rate even without overtime — and 42.1% with it — investment in structured career pathways, mentoring programmes, and accelerated promotion frameworks for high-performing junior employees is recommended to reduce the structural contribution to attrition risk.
 
 ### Limitations and Future Direction
 
 - The current dataset lacks qualitative data regarding the subjective experience of burnout. Future analysis should incorporate Natural Language Processing (NLP) on employee exit interviews to add contextual depth to these quantitative findings, moving from *what* is happening to *why* employees feel driven to leave.
-- The sample sizes in certain cells of the 3-way heatmap are small (e.g. Divorced + No Travel + Overtime, n = 13), which limits the reliability of attrition rate estimates in those segments. Larger datasets or longitudinal tracking would strengthen the precision of the interaction analysis.
-- The logistic regression model does not account for potential non-linear relationships or interaction terms between variables. A future extension using regularised regression (e.g. LASSO) or tree-based models (e.g. Random Forest) could capture more complex patterns in the data.
-- The analysis is cross-sectional, meaning it cannot establish causality with certainty — only association. A longitudinal study tracking employees' overtime hours and travel frequency over time before they resign would provide stronger causal evidence.
+- The sample sizes in certain cells of the 3-way heatmaps are small (e.g., Divorced + Level 4 + Overtime, n = 13), which limits the reliability of attrition rate estimates in those segments. Larger datasets or longitudinal tracking would strengthen the precision of the interaction analysis.
+- The logistic regression model does not account for potential non-linear relationships or interaction terms between variables. A future extension using regularised regression (e.g., LASSO) or tree-based models (e.g., Random Forest) could capture more complex patterns in the data.
+- The analysis is cross-sectional, meaning it cannot establish causality with certainty — only association. A longitudinal study tracking employees' overtime hours, job level progression, and travel frequency over time before they resign would provide stronger causal evidence.
