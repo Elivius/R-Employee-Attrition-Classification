@@ -14,8 +14,8 @@
 # Section 4 : Configuration                 - set values after seeing the data
 # Section 5 : Cleaning                      - fix what Section 3 revealed
 # Section 6 : Validation                    - confirm cleaning worked correctly
-# Section 7 : Individual Objective Analysis - Analyse based on cleaned dataset
-#
+# Section 7 : Individual Objective Analysis - Analyse based on cleaned dataset 
+# 
 # =============================================================================
 
 
@@ -60,10 +60,8 @@ if (!file.exists(raw_file)) {
 # Load the raw file
 # stringsAsFactors = FALSE -> keeps text as plain text, not auto-converted
 # na.strings -> tells R which values to treat as missing (NA)
-df_raw <- read.csv(raw_file,
-  stringsAsFactors = FALSE,
-  na.strings = c("", "NA", "N/A", "na", "n/a")
-)
+df_raw <- read.csv(raw_file, stringsAsFactors = FALSE,
+                   na.strings = c("", "NA", "N/A", "na", "n/a"))
 
 message("[OK] File loaded — ", nrow(df_raw), " rows x ", ncol(df_raw), " columns")
 
@@ -134,23 +132,24 @@ if ("EmployeeNumber" %in% names(df_raw)) {
   # Extract only non-NA IDs for the duplicate check
   valid_ids <- df_raw$EmployeeNumber[!is.na(df_raw$EmployeeNumber)]
   dup_ids <- sum(duplicated(valid_ids))
-
+  
   if (dup_ids > 0) {
     message("WARNING: Found ", dup_ids, " duplicated Employee IDs!")
     cat(">>> ACTION: Investigate if these are exact row duplicates or conflicting records.\n")
-
+    
     # Extract the duplicated IDs (excluding NAs)
     repeated_ids <- valid_ids[duplicated(valid_ids)]
-
+    
     # Get all rows that have these repeated IDs
     conflict_rows <- df_raw[df_raw$EmployeeNumber %in% repeated_ids, ]
     conflict_rows <- conflict_rows[order(conflict_rows$EmployeeNumber), ] # Sort so pairs are next to each other
-
+    
     message("\n--- Rows with Repeated IDs ---")
     # Print the ID and a few key columns so it fits in the console
     cols_to_show <- intersect(c("EmployeeNumber", "Attrition", "Age", "Department", "JobRole"), names(df_raw))
     print(conflict_rows[, cols_to_show])
     cat("\n")
+    
   } else {
     cat("Duplicate IDs found : 0 — all employees are unique.\n")
   }
@@ -173,8 +172,8 @@ print(table(df_raw$Attrition, useNA = "always"))
 message("\n--- Question 5b: Unique Values in Categorical Columns ---")
 
 char_cols <- df_raw %>%
-  select(where(is.character)) %>% # find all text columns automatically
-  names() # extract column names as a list
+  select(where(is.character)) %>%   # find all text columns automatically
+  names()                            # extract column names as a list
 
 for (col in char_cols) {
   cat("\n", col, ":\n")
@@ -188,7 +187,7 @@ for (col in char_cols) {
 message("\n--- Question 5c: Numeric Column Summary ---")
 
 num_cols <- df_raw %>%
-  select(where(is.numeric)) %>% # find all numeric columns automatically
+  select(where(is.numeric)) %>%   # find all numeric columns automatically
   names()
 
 # Print header row
@@ -196,12 +195,10 @@ cat(sprintf("  %-30s %-14s %-14s %s\n", "Column", "Min", "Average", "Max"))
 cat(strrep("-", 72), "\n")
 
 for (col in num_cols) {
-  r <- range(df_raw[[col]], na.rm = TRUE)
-  avg <- mean(df_raw[[col]], na.rm = TRUE)
-  cat(sprintf(
-    "  %-30s min = %-8s avg = %-8.2f max = %s\n",
-    col, r[1], avg, r[2]
-  ))
+  r   <- range(df_raw[[col]], na.rm = TRUE)
+  avg <- mean(df_raw[[col]],  na.rm = TRUE)
+  cat(sprintf("  %-30s min = %-8s avg = %-8.2f max = %s\n",
+              col, r[1], avg, r[2]))
 }
 
 # 6. Zero Variance (Feature that have same value every single row) - Use caret package
@@ -222,29 +219,29 @@ message("\n[OK] Exploration complete — review output above then proceed to Sec
 # =============================================================================
 
 # --- File Settings ---
-DATA_FILE <- raw_file
-OUTPUT_CSV <- "employee_attrition_cleaned.csv"
-OUTPUT_PARQUET <- "employee_attrition_cleaned.parquet"
+DATA_FILE        <- raw_file
+OUTPUT_CSV       <- "employee_attrition_cleaned.csv"
+OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 OUTPUT_STATS_CSV <- "statistical_test_results.csv"
 
 # --- Model Settings ---
-RANDOM_SEED <- 42 # keeps results the same every run
-TRAIN_SPLIT <- 0.80 # 80% trains the model, 20% tests it
+RANDOM_SEED <- 42     # keeps results the same every run
+TRAIN_SPLIT <- 0.80   # 80% trains the model, 20% tests it
 
 # --- Plot Colour Palette ---
-COLOR_NO <- "#2196F3" # blue   = stayed
-COLOR_YES <- "#F44336" # red    = left
-COLOR_BAR <- "#9C27B0" # purple = bar charts
-COLOR_ORANGE <- "#FF9800" # orange = training chart
-COLOR_GREEN <- "#4CAF50" # green  = no overtime
+COLOR_NO     <- "#2196F3"   # blue   = stayed
+COLOR_YES    <- "#F44336"   # red    = left
+COLOR_BAR    <- "#9C27B0"   # purple = bar charts
+COLOR_ORANGE <- "#FF9800"   # orange = training chart
+COLOR_GREEN  <- "#4CAF50"   # green  = no overtime
 
 # --- Factor Label Sets ---
 # Defined once here — reused in Section 5
 # You know these from your dataset description file
-LBL_4POINT <- c("Low", "Medium", "High", "Very High") # satisfaction scales
-LBL_WLB <- c("Bad", "Good", "Better", "Best") # work life balance
-LBL_PERF <- c("Low", "Good", "Excellent", "Outstanding") # performance rating
-LBL_EDU <- c("Below College", "College", "Bachelor", "Master", "Doctor") # education level
+LBL_4POINT <- c("Low", "Medium", "High", "Very High")                       # satisfaction scales
+LBL_WLB    <- c("Bad", "Good", "Better", "Best")                            # work life balance
+LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")                  # performance rating
+LBL_EDU    <- c("Below College", "College", "Bachelor", "Master", "Doctor") # education level
 
 message("[OK] Configuration set — proceeding to cleaning.")
 
@@ -303,9 +300,11 @@ if ("employee_number" %in% names(df)) {
 # -----------------------------------------------------------------------------
 message("\n--- 5.4 Universal Categorical Normalization ---")
 df <- df %>%
+  
   # Step 1 — normalise all categorical columns to lowercase, no spaces
   # Done once here so case_when below is clean and easy to read
-  mutate(across(where(is.character), ~ tolower(trimws(.)))) %>%
+  mutate(across(where(is.character), ~tolower(trimws(.)))) %>%
+  
   # Step 2 — standardise to final clean values
   # Conditions are now simple %in% checks — no tolower/trimws needed
   mutate(
@@ -313,82 +312,82 @@ df <- df %>%
     # Found in Section 3: "yes" "YES" "Yes" "1" "no" "NO" "No" "0"
     attrition = case_when(
       attrition %in% c("yes", "1") ~ "Yes",
-      attrition %in% c("no", "0") ~ "No",
+      attrition %in% c("no",  "0") ~ "No",
       TRUE ~ NA_character_
     ),
-
+    
     # Business Travel
     # Found in Section 3: "rare" "TRAVEL_RARELY" "frequent" "nil" "non-travel"
     business_travel = case_when(
       business_travel %in%
-        c("travel-rarely", "travel_rarely", "rare", "rarely", "travel rarely") ~ "Travel Rarely",
+        c("travel-rarely", "travel_rarely", "rare", "rarely", "travel rarely")                      ~ "Travel Rarely",
       business_travel %in%
-        c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently") ~ "Travel Frequently",
+        c("travel-frequently", "travel_frequently", "frequent", "frequently", "travel frequently")  ~ "Travel Frequently",
       business_travel %in%
         c("non-travel", "non_travel", "non", "nontravel", "nil", "no travel", "non travel", "none") ~ "No Travel",
-      TRUE ~ NA_character_
+      TRUE                                                                                          ~ NA_character_
     ),
-
+    
     # Department
     # Found in Section 3: "sale" "r&d" "Research & Development" "hr"
     department = case_when(
-      department %in% c("sales", "sale") ~ "Sales",
+      department %in% c("sales", "sale")                                                            ~ "Sales",
       department %in% c("r&d", "research & development", "research and development", "rd", "r & d") ~ "Research & Development",
-      department %in% c("hr", "h&r", "human resources", "human resource") ~ "Human Resources",
-      TRUE ~ NA_character_
+      department %in% c("hr", "h&r", "human resources", "human resource")                           ~ "Human Resources",
+      TRUE                                                                                          ~ NA_character_
     ),
-
+    
     # Education Field
     # Found in Section 3: Synonyms like 'ls' for 'Life Sciences' and 'med' for 'Medical'
     education_field = case_when(
-      education_field %in% c("life sciences", "ls") ~ "Life Sciences",
-      education_field %in% c("medical", "med") ~ "Medical Sciences",
-      education_field %in% c("marketing", "mkt") ~ "Marketing",
-      education_field %in% c("technical degree", "td") ~ "Technical",
+      education_field %in% c("life sciences", "ls")                            ~ "Life Sciences",
+      education_field %in% c("medical", "med")                                 ~ "Medical Sciences",
+      education_field %in% c("marketing", "mkt")                               ~ "Marketing",
+      education_field %in% c("technical degree", "td")                         ~ "Technical",
       education_field %in% c("hr", "h&r", "human resources", "human resource") ~ "Human Resources",
-      education_field %in% c("other", "others") ~ "Others",
-      TRUE ~ NA_character_
+      education_field %in% c("other", "others")                                ~ "Others",
+      TRUE                                                                     ~ NA_character_
     ),
-
+    
     # Gender
     # Found in Section 3: "f" "F" "female" "FEMALE" "m" "M" "male" "MALE"
     gender = case_when(
       gender %in% c("f", "female") ~ "Female",
-      gender %in% c("m", "male") ~ "Male",
-      TRUE ~ NA_character_
+      gender %in% c("m", "male")   ~ "Male",
+      TRUE                          ~ NA_character_
     ),
-
+    
     # Job Role
     # Found in Section 3: abbreviations ("hr", "sales rep", "sales exe"),
     # truncations ("manufacture director") and full names mixed together
     job_role = case_when(
-      job_role %in% c("healthcare representative", "healthcare rep") ~ "Healthcare Representative",
-      job_role %in% c("laboratory technician", "lab technician") ~ "Laboratory Technician",
+      job_role %in% c("healthcare representative", "healthcare rep")    ~ "Healthcare Representative",
+      job_role %in% c("laboratory technician", "lab technician")        ~ "Laboratory Technician",
       job_role %in% c("manufacturing director", "manufacture director") ~ "Manufacturing Director",
-      job_role %in% c("research scientist") ~ "Research Scientist",
-      job_role %in% c("research director") ~ "Research Director",
-      job_role %in% c("sales executive", "sales exe") ~ "Sales Executive",
-      job_role %in% c("sales representative", "sales rep") ~ "Sales Representative",
-      job_role %in% c("manager") ~ "Manager",
-      job_role %in% c("human resources", "hr") ~ "Human Resources",
-      TRUE ~ NA_character_
+      job_role %in% c("research scientist")                             ~ "Research Scientist",
+      job_role %in% c("research director")                              ~ "Research Director",
+      job_role %in% c("sales executive", "sales exe")                   ~ "Sales Executive",
+      job_role %in% c("sales representative", "sales rep")              ~ "Sales Representative",
+      job_role %in% c("manager")                                        ~ "Manager",
+      job_role %in% c("human resources", "hr")                          ~ "Human Resources",
+      TRUE                                                              ~ NA_character_
     ),
-
+    
     # Marital Status
     # Found in Section 3: Casing (already fixed by tolower), but make it report-ready
     marital_status = case_when(
-      marital_status == "single" ~ "Single",
-      marital_status == "married" ~ "Married",
+      marital_status == "single"   ~ "Single",
+      marital_status == "married"  ~ "Married",
       marital_status == "divorced" ~ "Divorced",
-      TRUE ~ NA_character_
+      TRUE                         ~ NA_character_
     ),
-
+    
     # OverTime
     # Found in Section 3: "yes" "YES" "1" "no" "NO" "0"
     over_time = case_when(
       over_time %in% c("yes", "1") ~ "Yes",
-      over_time %in% c("no", "0") ~ "No",
-      TRUE ~ NA_character_
+      over_time %in% c("no",  "0") ~ "No",
+      TRUE                          ~ NA_character_
     )
   )
 message("[OK] 5.4 Categorical columns standardised.")
@@ -403,9 +402,9 @@ message("[OK] 5.4 Categorical columns standardised.")
 # -----------------------------------------------------------------------------
 message("\n--- 5.5 Clean Dirty Numeric Columns ---")
 clean_numeric <- function(x) {
-  x <- gsub("[^0-9.]", "", as.character(x)) # strip non-numeric chars
-  x[x == ""] <- NA # empty string = missing
-  as.numeric(x) # convert to number
+  x <- gsub("[^0-9.]", "", as.character(x))  # strip non-numeric chars
+  x[x == ""] <- NA                            # empty string = missing
+  as.numeric(x)                               # convert to number
 }
 
 # Known categorical columns — excluded from numeric cleaning
@@ -420,10 +419,10 @@ known_categorical <- c(
 # (c) contain at least one dirty character like "_" or "?"
 dirty_cols <- names(df)[
   !names(df) %in% known_categorical &
-    sapply(df, function(x) {
+    sapply(df, function(x)
       !is.numeric(x) &&
         any(grepl("[^0-9.\\-]", na.omit(as.character(x))))
-    })
+    )
 ]
 
 df <- df %>% mutate(across(all_of(dirty_cols), clean_numeric))
@@ -458,10 +457,8 @@ message("[OK] 5.6 Removed ", dedup_removed, " duplicate rows.")
 message("\n--- 5.7 Remove Rows With Missing Target ---")
 rows_before_target <- nrow(df)
 df <- df %>% filter(!is.na(attrition))
-message(
-  "[OK] 5.7 Removed ", rows_before_target - nrow(df),
-  " rows with missing Attrition (target variable)."
-)
+message("[OK] 5.7 Removed ", rows_before_target - nrow(df),
+    " rows with missing Attrition (target variable).")
 cat("  Rows remaining:", nrow(df), "\n")
 
 
@@ -473,7 +470,7 @@ cat("  Rows remaining:", nrow(df), "\n")
 # -----------------------------------------------------------------------------
 message("\n--- 5.8 Impute Remaining Missing Values ---")
 get_mode <- function(x) {
-  ux <- unique(x[!is.na(x)]) # unique non-NA values
+  ux <- unique(x[!is.na(x)])            # unique non-NA values
   ux[which.max(tabulate(match(x, ux)))] # return the most frequent one
 }
 
@@ -481,31 +478,23 @@ na_before <- sum(is.na(df))
 
 # Ordinal columns (1-4 or 1-5 scales) — use ROUNDED median so values
 # stay as valid integers for factor conversion in Step 5.9
-ordinal_cols <- c(
-  "education", "environment_satisfaction", "job_satisfaction",
-  "job_involvement", "relationship_satisfaction",
-  "work_life_balance", "performance_rating"
-)
+ordinal_cols <- c("education", "environment_satisfaction", "job_satisfaction",
+                 "job_involvement", "relationship_satisfaction",
+                 "work_life_balance", "performance_rating")
 
 # Single mutate handles ordinal, continuous numeric, and categorical together
 df <- df %>%
   mutate(
-    across(
-      all_of(ordinal_cols),
-      ~ ifelse(is.na(.), round(median(., na.rm = TRUE)), .)
-    ),
-    across(
-      where(is.numeric) & !all_of(ordinal_cols),
-      ~ ifelse(is.na(.), median(., na.rm = TRUE), .)
-    ),
+    across(all_of(ordinal_cols),
+           ~ ifelse(is.na(.), round(median(., na.rm = TRUE)), .)),
+    across(where(is.numeric) & !all_of(ordinal_cols),
+           ~ ifelse(is.na(.), median(., na.rm = TRUE), .)),
     across(where(is.character), ~ ifelse(is.na(.), get_mode(.), .))
   )
 
 na_after <- sum(is.na(df))
-message(
-  "[OK] 5.8 Imputation complete — filled ",
-  na_before - na_after, " missing values."
-)
+message("[OK] 5.8 Imputation complete — filled ",
+    na_before - na_after, " missing values.")
 
 
 # -----------------------------------------------------------------------------
@@ -525,21 +514,21 @@ df <- df %>%
     relationship_satisfaction = factor(relationship_satisfaction, levels = 1:4, labels = LBL_4POINT),
     work_life_balance         = factor(work_life_balance, levels = 1:4, labels = LBL_WLB),
     performance_rating        = factor(performance_rating, levels = 1:4, labels = LBL_PERF),
-
+    
     # Seniority & Financial Buckets
     job_level                 = factor(job_level),
     stock_option_level        = factor(stock_option_level),
-
+    
     # Target Variable
     attrition                 = factor(attrition, levels = c("No", "Yes")),
-
+    
     # Nominal Variables (Unordered Labels)
     gender                    = factor(gender),
     department                = factor(department),
     business_travel           = factor(business_travel),
     over_time                 = factor(over_time),
     marital_status            = factor(marital_status),
-
+    
     # Categorical Labels
     education_field           = factor(education_field),
     job_role                  = factor(job_role)
@@ -553,14 +542,11 @@ message("[OK] 5.9 Columns converted to labelled factors.")
 message("\n--- 5.10 Impossible Logic Correction ---")
 # Count before correction
 flag1_count <- sum(df$total_working_years < df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag2_count <- sum(df$age < (df$total_working_years + 14),
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag3_count <- sum(df$years_in_current_role > df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 
 total_initial_flags <- flag1_count + flag2_count + flag3_count
 
@@ -568,7 +554,7 @@ cat("Before correction:\n")
 cat("  Flag 1 (TotalWorkingYears < YearsAtCompany)  :", flag1_count, "rows\n")
 cat("  Flag 2 (Age < TotalWorkingYears + 14)        :", flag2_count, "rows\n")
 cat("  Flag 3 (YearsInCurrentRole > YearsAtCompany) :", flag3_count, "rows\n")
-cat("Total Impossible Logic:", total_initial_flags, "\n")
+cat("Total Impossible Logic:", total_initial_flags,"\n")
 
 # Correct all three in one mutate
 # NOTE: Fix 1 (push UP) and Fix 2 (push DOWN) can conflict when
@@ -576,30 +562,29 @@ cat("Total Impossible Logic:", total_initial_flags, "\n")
 # and are removed below after the heuristic pass.
 df <- df %>%
   mutate(
+    
     # Fix 1: total_working_years must be >= years_at_company
     # Take the higher value — you must have worked at least
     # as long as you have been at this company
     total_working_years = pmax(total_working_years, years_at_company),
-
+    
     # Fix 2: total_working_years must be <= age - 14
     # Take the lower value — cannot have worked before age 14
     total_working_years = pmin(total_working_years, age - 14),
-
+    
     # Fix 3: years_in_current_role must be <= years_at_company
     # Take the lower value — cannot be in role longer than at company
     years_in_current_role = pmin(years_in_current_role, years_at_company)
+    
   )
 
 # Verify all fixed
 flag1_after <- sum(df$total_working_years < df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag2_after <- sum(df$age < (df$total_working_years + 14),
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag3_after <- sum(df$years_in_current_role > df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 
 cat("\nAfter correction:\n")
 cat("  Flag 1 remaining:", flag1_after, "\n")
@@ -612,21 +597,16 @@ rows_before_impossible_correction <- nrow(df)
 df <- df %>%
   filter(total_working_years >= years_at_company)
 
-message(
-  "\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df),
-  " irreconcilable rows that failed heuristic repair."
-)
+message("\n[ACTION] Removed final ", rows_before_impossible_correction - nrow(df), 
+    " irreconcilable rows that failed heuristic repair.")
 
 # Verify all fixed - after removal
 flag1_after <- sum(df$total_working_years < df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag2_after <- sum(df$age < (df$total_working_years + 14),
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 flag3_after <- sum(df$years_in_current_role > df$years_at_company,
-  na.rm = TRUE
-)
+                   na.rm = TRUE)
 
 final_removed <- rows_before_impossible_correction - nrow(df)
 total_corrected <- total_initial_flags - final_removed
@@ -643,10 +623,8 @@ cat("  Leftover dataset:", nrow(df), "x", ncol(df), "\n")
 
 # Rename as clean dataset
 df_clean <- df
-message(
-  "\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
-  ncol(df_clean), " columns."
-)
+message("\n[OK] df_clean is ready — ", nrow(df_clean), " rows x ",
+    ncol(df_clean), " columns.")
 
 
 # =============================================================================
@@ -674,44 +652,27 @@ if (length(missing_clean) == 0) {
 message("\n--- 6.2 Cleaned Unique Values ---")
 
 # Target & Basic Info
-cat("Attrition         :")
-print(levels(df_clean$attrition))
-cat("Gender            :")
-print(levels(df_clean$gender))
-cat("Marital Status    :")
-print(levels(df_clean$marital_status))
-cat("OverTime          :")
-print(levels(df_clean$over_time))
+cat("Attrition         :"); print(levels(df_clean$attrition))
+cat("Gender            :"); print(levels(df_clean$gender))
+cat("Marital Status    :"); print(levels(df_clean$marital_status))
+cat("OverTime          :"); print(levels(df_clean$over_time))
 
 # Professional & Education
-cat("Department        :")
-print(levels(df_clean$department))
-cat("Business Travel   :")
-print(levels(df_clean$business_travel))
-cat("Education Field   :")
-print(levels(df_clean$education_field))
-cat("Job Role          :")
-print(levels(df_clean$job_role))
-cat("Job Level         :")
-print(levels(df_clean$job_level))
-cat("Stock Option Level:")
-print(levels(df_clean$stock_option_level))
+cat("Department        :"); print(levels(df_clean$department))
+cat("Business Travel   :"); print(levels(df_clean$business_travel))
+cat("Education Field   :"); print(levels(df_clean$education_field))
+cat("Job Role          :"); print(levels(df_clean$job_role))
+cat("Job Level         :"); print(levels(df_clean$job_level))
+cat("Stock Option Level:"); print(levels(df_clean$stock_option_level))
 
 # Ordinal Scales (Satisfaction & Performance)
-cat("Education         :")
-print(levels(df_clean$education))
-cat("Job Satisfaction  :")
-print(levels(df_clean$job_satisfaction))
-cat("Env. Satisfaction :")
-print(levels(df_clean$environment_satisfaction))
-cat("Job Involvement   :")
-print(levels(df_clean$job_involvement))
-cat("Rel. Satisfaction :")
-print(levels(df_clean$relationship_satisfaction))
-cat("Work Life Balance :")
-print(levels(df_clean$work_life_balance))
-cat("Performance Rating:")
-print(levels(df_clean$performance_rating))
+cat("Education         :"); print(levels(df_clean$education))
+cat("Job Satisfaction  :"); print(levels(df_clean$job_satisfaction))
+cat("Env. Satisfaction :"); print(levels(df_clean$environment_satisfaction))
+cat("Job Involvement   :"); print(levels(df_clean$job_involvement))
+cat("Rel. Satisfaction :"); print(levels(df_clean$relationship_satisfaction))
+cat("Work Life Balance :"); print(levels(df_clean$work_life_balance))
+cat("Performance Rating:"); print(levels(df_clean$performance_rating))
 
 
 # --- 6.3 Confirm Imputation Values Used ---
@@ -722,39 +683,39 @@ df_clean %>%
   select(where(is.numeric)) %>%
   summarise(across(everything(), ~ median(., na.rm = TRUE))) %>%
   pivot_longer(everything(),
-    names_to  = "column",
-    values_to = "median_used"
-  ) %>%
+               names_to  = "column",
+               values_to = "median_used") %>%
   print(n = Inf)
 
 
 # --- 6.4 Final Data Health Summary ---
 message("\n--- 6.4 Final Data Health Summary ---")
-cat(sprintf("  %-40s %d\n", "Raw rows loaded:", nrow(df_raw)))
-cat(sprintf("  %-40s %d\n", "Duplicates removed:", dedup_removed))
-cat(sprintf("  %-40s %d\n", "Missing target (Attrition) removed:", rows_before_target - rows_before_impossible_correction))
-cat(sprintf("  %-40s %d\n", "NAs imputed:", na_before - na_after))
-cat(sprintf("  %-40s %d\n", "Zero variance features/columns removed:", length(zero_var_cols)))
-cat(sprintf("  %-40s %d\n", "Impossible logic corrected:", total_corrected))
-cat(sprintf("  %-40s %d\n", "Impossible logic removed:", final_removed))
-cat(sprintf("  %-40s %d\n", "Final clean rows:", nrow(df_clean)))
-cat(sprintf("  %-40s %d\n", "Final clean cols:", ncol(df_clean)))
-cat(sprintf("  %-40s %d\n", "Remaining NAs:", sum(is.na(df_clean))))
-cat(sprintf("  %-40s %d\n", "Stayed (No):", sum(df_clean$attrition == "No")))
-cat(sprintf("  %-40s %d\n", "Left (Yes):", sum(df_clean$attrition == "Yes")))
-cat(sprintf("  %-40s %.2f%%\n", "Attrition Rate:", sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
+cat(sprintf("  %-40s %d\n",    "Raw rows loaded:",                         nrow(df_raw)))
+cat(sprintf("  %-40s %d\n",    "Duplicates removed:",                      dedup_removed))
+cat(sprintf("  %-40s %d\n",    "Missing target (Attrition) removed:",      rows_before_target - rows_before_impossible_correction))
+cat(sprintf("  %-40s %d\n",    "NAs imputed:",                             na_before - na_after))
+cat(sprintf("  %-40s %d\n",    "Zero variance features/columns removed:",  length(zero_var_cols)))
+cat(sprintf("  %-40s %d\n",    "Impossible logic corrected:",              total_corrected))
+cat(sprintf("  %-40s %d\n",    "Impossible logic removed:",                final_removed))
+cat(sprintf("  %-40s %d\n",    "Final clean rows:",                        nrow(df_clean)))
+cat(sprintf("  %-40s %d\n",    "Final clean cols:",                        ncol(df_clean)))
+cat(sprintf("  %-40s %d\n",    "Remaining NAs:",                           sum(is.na(df_clean))))
+cat(sprintf("  %-40s %d\n",    "Stayed (No):",                             sum(df_clean$attrition == "No")))
+cat(sprintf("  %-40s %d\n",    "Left (Yes):",                              sum(df_clean$attrition == "Yes")))
+cat(sprintf("  %-40s %.2f%%\n","Attrition Rate:",                          sum(df_clean$attrition == "Yes") / nrow(df_clean) * 100))
 
 # Export clean dataset
 write.csv(df_clean, OUTPUT_CSV, row.names = FALSE)
 message("\n[OK] Clean dataset saved to: ", OUTPUT_CSV)
 
-# We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary
+# We convert the CSV to Parquet format. Unlike CSVs, Parquet is a binary 
 # columnar format that allows for high-speed I/O and better compression.
 write_parquet(df_clean, OUTPUT_PARQUET)
 message("[OK] Clean dataset saved to: ", OUTPUT_PARQUET)
 
 message("[OK] Clean data saved as CSV and Optimized Parquet.")
 message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
+
 
 # =============================================================================
 # SECTION 7 - OBJECTIVE 4: CULTURE DISSATISFACTION
