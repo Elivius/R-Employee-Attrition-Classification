@@ -726,6 +726,8 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # Section 7.1 Objective 1: Compensation
 # Name: Joshua Yeo Jing Hao TP077315
 
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(arrow)
 OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 
 # --- 7.1 Verify Parquet File Exists Before Reading ---
