@@ -727,7 +727,11 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # Name: Joshua Yeo Jing Hao TP077315
 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(arrow)
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
+
+message("[OK] All libraries loaded — ready to proceed.")
+
+
 OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 
 # --- 7.1 Verify Parquet File Exists Before Reading ---
@@ -1028,7 +1032,7 @@ plot1c <- df_obj1 %>%
 print(plot1c)
 
 
-# --- Plot 4: Income by Job Level — Deep Dive ---
+# --- Plot 4: Income by Job Level ---
 # Shows whether income gap exists consistently at EVERY seniority level
 # Directly supports the "quantify" requirement in the objective
 plot1d <- df_obj1 %>%
