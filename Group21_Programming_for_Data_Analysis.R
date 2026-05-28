@@ -1204,7 +1204,7 @@ cat("[OK] Compensation model trained.\n\n")
 pred_current <- predict(compensation_fit,
                         compensation_model_data,
                         type = "prob")$.pred_Yes
-current_rate <- mean(pred_current > 0.5) * 100
+current_rate   <- mean(pred_current) * 100
 
 
 # --- Scenario 1: 10% Salary Increase for ALL employees ---
@@ -1213,7 +1213,7 @@ scenario1 <- compensation_model_data %>%
 
 pred_scenario1 <- predict(compensation_fit, scenario1,
                           type = "prob")$.pred_Yes
-scenario1_rate <- mean(pred_scenario1 > 0.5) * 100
+scenario1_rate <- mean(pred_scenario1) * 100
 
 cat("Scenario 1: 10% Salary Increase for All Employees\n")
 cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
@@ -1228,7 +1228,7 @@ scenario2 <- compensation_model_data %>%
 
 pred_scenario2 <- predict(compensation_fit, scenario2,
                           type = "prob")$.pred_Yes
-scenario2_rate <- mean(pred_scenario2 > 0.5) * 100
+scenario2_rate <- mean(pred_scenario2) * 100
 
 cat("Scenario 2: Minimum Salary Hike of 15% for All Employees\n")
 cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
@@ -1249,7 +1249,7 @@ scenario3 <- compensation_model_data %>%
 
 pred_scenario3 <- predict(compensation_fit, scenario3,
                           type = "prob")$.pred_Yes
-scenario3_rate <- mean(pred_scenario3 > 0.5) * 100
+scenario3_rate <- mean(pred_scenario3) * 100
 
 cat("Scenario 3: Provide Minimum Stock Options to Employees with None\n")
 cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
