@@ -764,10 +764,10 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 #            relationship_satisfaction, work_life_balance, job_involvement
 # =============================================================================
 # GRAPHS:
-#   7.4.1  Grouped Bar  — Attrition rate by satisfaction level (all 5 variables)
-#   7.4.2  Stacked Bar  — Work-life balance: stayed vs left count
-#   7.4.3  Line Chart   — Composite culture score vs attrition rate
-#   7.4.4  Heatmap      — Attrition rate across all 5 culture variables
+#   4-1  Grouped Bar  — Attrition rate by satisfaction level (all 5 variables)
+#   4-2  Stacked Bar  — Work-life balance: stayed vs left count
+#   4-3  Line Chart   — Composite culture score vs attrition rate
+#   4-4  Heatmap      — Attrition rate across all 5 culture variables
 # =============================================================================
 
 message("[Section 7] Culture Dissatisfaction analysis starting...")
@@ -842,7 +842,7 @@ theme_obj4 <- function() {
 
 
 # =============================================================================
-# 7.4.1  GROUPED BAR — Attrition rate by satisfaction level (4 variables)
+# 4-1  GROUPED BAR — Attrition rate by satisfaction level (4 variables)
 # Shows: which satisfaction level has the highest attrition rate per variable
 # Excludes work_life_balance (covered separately in 7.2)
 # =============================================================================
@@ -920,7 +920,7 @@ message("[OK] 7.1 saved.")
 
 
 # =============================================================================
-# 7.4.2  STACKED BAR — Work-life balance: stayed vs left
+# 4-2  STACKED BAR — Work-life balance: stayed vs left
 # Shows: volume of employees at each WLB level and proportion who left
 # WLB uses a different 4-level scale (Bad/Good/Better/Best) — treated separately
 # =============================================================================
@@ -1001,7 +1001,7 @@ message("[OK] 7.2 saved.")
 
 
 # =============================================================================
-# 7.4.3  LINE CHART — Composite culture score vs attrition rate
+# 4-3  LINE CHART — Composite culture score vs attrition rate
 # Composite = sum of all 5 culture scores (each mapped 1–4)
 #   5  = lowest possible culture experience (all Low/Bad)
 #   20 = highest possible culture experience (all Very High/Best)
@@ -1105,7 +1105,7 @@ message("[OK] 7.3 saved.")
 
 
 # =============================================================================
-# 7.4.4  HEATMAP — Attrition rate across all 5 culture variables × all levels
+# 4-4  HEATMAP — Attrition rate across all 5 culture variables × all levels
 # Rows = variables, Columns = satisfaction levels
 # Cell colour = attrition rate (red = high, green = low)
 # =============================================================================
