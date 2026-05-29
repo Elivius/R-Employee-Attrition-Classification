@@ -764,10 +764,10 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 #            relationship_satisfaction, work_life_balance, job_involvement
 # =============================================================================
 # GRAPHS:
-#   4-1  Grouped Bar  — Attrition rate by satisfaction level (all 5 variables)
-#   4-2  Stacked Bar  — Work-life balance: stayed vs left count
-#   4-3  Line Chart   — Composite culture score vs attrition rate
-#   4-4  Heatmap      — Attrition rate across all 5 culture variables
+#   Analysis 4-1  Grouped Bar  — Attrition rate by satisfaction level (all 5 variables)
+#   Analysis 4-2  Stacked Bar  — Work-life balance: stayed vs left count
+#   Analysis 4-3  Line Chart   — Composite culture score vs attrition rate
+#   Analysis 4-4  Heatmap      — Attrition rate across all 5 culture variables
 # =============================================================================
 
 message("[Section 7] Culture Dissatisfaction analysis starting...")
@@ -842,9 +842,9 @@ theme_obj4 <- function() {
 
 
 # =============================================================================
-# 4-1  GROUPED BAR — Attrition rate by satisfaction level (4 variables)
+# 4-1  GROUPED BAR — Attrition rate by satisfaction level (5 variables)
 # Shows: which satisfaction level has the highest attrition rate per variable
-# Excludes work_life_balance (covered separately in 7.2)
+# Excludes work_life_balance (covered separately in 4-2)
 # =============================================================================
 
 message("\n[7.1] Building grouped bar chart...")
@@ -1107,7 +1107,7 @@ message("[OK] 7.3 saved.")
 # =============================================================================
 # 4-4  HEATMAP — Attrition rate across all 5 culture variables × all levels
 # Rows = variables, Columns = satisfaction levels
-# Cell colour = attrition rate (red = high, green = low)
+# Cell colour = attrition rate (red = high, light yellow = low)
 # =============================================================================
 
 message("\n[7.4] Building heatmap...")
