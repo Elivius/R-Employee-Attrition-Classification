@@ -19,3 +19,5 @@
 renv/library/
 renv/staging/
 .positai
+
+*.png

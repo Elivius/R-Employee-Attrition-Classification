@@ -763,6 +763,7 @@ OBJ2_THEME <- theme_minimal(base_size = 13) +
   )
 COLOR_NO  <- "#2196F3"   # blue = stayed
 COLOR_YES <- "#F44336"   # red  = left
+COLOR_BAR <- "#9C27B0"   # purple = bar charts
 
 
 # =============================================================================
@@ -898,7 +899,7 @@ p_obj2_3 <- df_clean %>%
   scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
   labs(
     title    = "The Commute Penalty: Distance & Attrition",
-    subtitle = paste("Kruskal-Wallis p =", round(dist_kw$p.value, 4),
+    subtitle = paste("Kruskal-Wallis p =", format.pval(dist_kw$p.value, digits = 3),
                       "  |  Non-parametric (distance is right-skewed)"),
     x = "Attrition", y = "Distance from Home (km)"
   ) +
