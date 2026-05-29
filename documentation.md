@@ -25,11 +25,12 @@ Each variable was selected because it captures a distinct dimension of the time-
 
 ### Analytical Framework
 
-This objective employs a three-tier analytical framework:
+This objective employs a four-tier analytical framework:
 
 - **Tier 1 — Descriptive:** Proportional bar charts, violin plots, and heatmaps to establish baseline attrition rates and visualise patterns across each burnout variable.
 - **Tier 2 — Diagnostic:** Chi-Square tests, Cramér's V effect sizes, and Kruskal-Wallis rank-sum tests to determine whether observed patterns are statistically significant rather than attributable to random chance.
 - **Tier 3 — Predictive:** A burnout-scoped multivariate logistic regression (Analysis 2-6) combining all four burnout variables to quantify each factor's independent contribution to attrition risk while controlling for the simultaneous influence of the others.
+- **Tier 4 — Prescriptive:** Actionable HR intervention protocols (e.g., targeted well-being check-ins and workload reviews) derived from the compounding risk profiles identified in the interaction heatmaps and predictive models.
 
 The Extra Feature extends Tier 3 further with a full all-variable model across the entire dataset, using the results to identify unexpected significant predictors — specifically Job Level — and then investigating the underlying mechanism with follow-up heatmaps.
 
