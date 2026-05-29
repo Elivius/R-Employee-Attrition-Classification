@@ -722,7 +722,10 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # =============================================================================
 
 
-#=============================================================================
+
+
+
+# =============================================================================
 # SECTION 7: ANALYTICS DATA RETRIEVAL (PARQUET PIPELINE)
 # Purpose:
 # Reload optimized parquet datasets for downstream analysis.
@@ -731,10 +734,9 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # =============================================================================
 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot, broom)
 
 message("[OK] All libraries loaded — ready to proceed.")
-
 
 OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 
@@ -753,6 +755,7 @@ cat("Source file  :", OUTPUT_PARQUET, "\n")
 df_analysis <- read_parquet(OUTPUT_PARQUET)
 cat("Full dataset :", nrow(df_analysis), "rows x",
     ncol(df_analysis), "cols\n\n")
+
 # --- Objective-specific columnar reads ---
 # Each objective only loads the columns it needs
 # This is the core benefit of Parquet over CSV
@@ -775,10 +778,14 @@ df_obj2 <- read_parquet(
 cat("Obj 2 (Burnout)       :", ncol(df_obj2), "cols loaded\n")
 
 # Objective 3 — Career Growth
+# Includes all columns needed for Analysis 3:
+#   years_in_current_role  — used in plot_3d (Role Stagnation Index)
+#   num_companies_worked   — used in descriptive summary
 df_obj3 <- read_parquet(
   OUTPUT_PARQUET,
   col_select = c("attrition", "years_since_last_promotion",
                  "training_times_last_year", "years_at_company",
+                 "years_in_current_role", "num_companies_worked",
                  "job_level")
 )
 cat("Obj 3 (Career Growth) :", ncol(df_obj3), "cols loaded\n")
@@ -844,6 +851,21 @@ cat("     df_obj1, df_obj2, df_obj3, df_obj4 ready for analysis.\n")
 cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
 
 
+# =============================================================================
+# Section 7 Config — colours and constants used across all objectives
+# =============================================================================
+
+RANDOM_SEED  <- 42
+COLOR_NO     <- "#2196F3"   # blue   = stayed
+COLOR_YES    <- "#F44336"   # red    = left
+COLOR_BAR    <- "#9C27B0"   # purple = bar charts
+COLOR_ORANGE <- "#FF9800"   # orange = training chart
+COLOR_GREEN  <- "#4CAF50"   # green  = no overtime
+
+LBL_4POINT <- c("Low", "Medium", "High", "Very High")
+LBL_WLB    <- c("Bad", "Good", "Better", "Best")
+LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")
+LBL_EDU    <- c("Below College", "College", "Bachelor", "Master", "Doctor")
 
 
 # =============================================================================
@@ -857,57 +879,6 @@ cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
 #             significantly more likely to leave the organisation.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# STANDALONE BLOCK
-# Run this block if you are running analysis 3 ONLY
-# (i.e. did NOT run Sections 1-6 and analysis 3 in this session)
-# If you already ran the full script above, this block safely skips itself
-# -----------------------------------------------------------------------------
-
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, scales, gridExtra, arrow, caret, broom)
-
-OUTPUT_PARQUET <- "employee_attrition_cleaned.parquet"
-
-# --- Config mirrors Section 4 exactly ---
-RANDOM_SEED  <- 42
-COLOR_NO     <- "#2196F3"   # blue   = stayed
-COLOR_YES    <- "#F44336"   # red    = left
-COLOR_BAR    <- "#9C27B0"   # purple = bar charts
-COLOR_ORANGE <- "#FF9800"   # orange = training chart
-COLOR_GREEN  <- "#4CAF50"   # green  = no overtime
-
-LBL_4POINT <- c("Low", "Medium", "High", "Very High")
-LBL_WLB    <- c("Bad", "Good", "Better", "Best")
-LBL_PERF   <- c("Low", "Good", "Excellent", "Outstanding")
-LBL_EDU    <- c("Below College", "College", "Bachelor", "Master", "Doctor")
-
-if (!file.exists(OUTPUT_PARQUET)) {
-  stop("[ERROR] Parquet file not found! Run Sections 1-6 first to generate it.")
-}
-
-# Load df_obj3 only if it does not exist yet OR is missing required columns
-# This prevents overwriting the already-loaded version when running the full script
-required_cols_obj3 <- c(
-  "attrition", "years_since_last_promotion", "training_times_last_year",
-  "years_at_company", "years_in_current_role", "num_companies_worked", "job_level"
-)
-
-if (!exists("df_obj3") || !all(required_cols_obj3 %in% names(df_obj3))) {
-  message("[INFO] Loading df_obj3 from parquet...")
-  df_obj3 <- read_parquet(
-    OUTPUT_PARQUET,
-    col_select = all_of(required_cols_obj3)
-  ) %>%
-    mutate(
-      attrition = factor(attrition, levels = c("No", "Yes")),
-      job_level = factor(job_level)
-    )
-  message("[OK] df_obj3 loaded — ", nrow(df_obj3), " rows x ", ncol(df_obj3), " cols")
-} else {
-  message("[OK] df_obj3 already loaded — skipping parquet read.")
-}
-
 # --- Shared theme (mirrors group style) ---
 theme_career <- theme_minimal(base_size = 13) +
   theme(
@@ -919,7 +890,7 @@ theme_career <- theme_minimal(base_size = 13) +
     plot.margin      = margin(10, 10, 10, 10)
   )
 
-# Colour mapping — uses Section 4 config variables (not hardcoded)
+# Colour mapping — uses Section 7 config variables (not hardcoded)
 career_colors <- c("No" = COLOR_NO, "Yes" = COLOR_YES)
 
 cat("\n=== OBJECTIVE 3: CAREER GROWTH / STAGNATION ANALYSIS ===\n")
@@ -1150,7 +1121,7 @@ grid.arrange(plot_3a, plot_3b, plot_3c, plot_3d,
              ncol = 2,
              top  = "OBJECTIVE 3: Career Growth / Stagnation & Attrition Analysis")
 
-message("[OK] analysis 3-2 Visualisations complete.")
+message("[OK] Analysis 3-2 Visualisations complete.")
 
 
 # =============================================================================
@@ -1269,7 +1240,7 @@ career_stats <- tibble(
 cat("\n--- Career Growth Statistical Results Summary ---\n")
 print(career_stats)
 
-message("[OK] analysis 3-3 Statistical Tests complete.")
+message("[OK] Analysis 3-3 Statistical Tests complete.")
 
 
 # =============================================================================
@@ -1283,7 +1254,7 @@ message("[OK] analysis 3-3 Statistical Tests complete.")
 
 cat("\n=== WHAT IF: Career Growth Intervention Scenarios ===\n")
 
-set.seed(RANDOM_SEED)  # Section 4 config — ensures reproducible results
+set.seed(RANDOM_SEED)  # Section 7 config — ensures reproducible results
 
 # --- Step 1: Prepare modelling data ---
 career_model_data <- df_obj3 %>%
@@ -1418,126 +1389,3 @@ print(plot_3e)
 #   stagnation is a controllable, policy-addressable driver of employee turnover.
 
 message("[OK] Analysis 3-4 What If Analysis complete.")
-
-
-# =============================================================================
-# Analysis 3-5  MODEL OVERVIEW — Full Logistic Regression (All Variables)
-# Purpose : Show which predictors across the ENTIRE dataset are significant
-#           in predicting attrition — places career growth in full context
-# Style   : Dark background | Red = significant | Grey = not significant
-#           Horizontal forest plot with 95% CI bars and OR = 1 reference line
-# Note    : Reloads all columns from parquet — does not depend on df_obj3
-# =============================================================================
-
-# Reload full dataset with all columns and correct factor levels
-df_full <- read_parquet(OUTPUT_PARQUET) %>%
-  mutate(
-    attrition                 = factor(attrition,                 levels = c("No", "Yes")),
-    education                 = factor(education,                 levels = LBL_EDU),
-    environment_satisfaction  = factor(environment_satisfaction,  levels = LBL_4POINT),
-    job_satisfaction          = factor(job_satisfaction,          levels = LBL_4POINT),
-    job_involvement           = factor(job_involvement,           levels = LBL_4POINT),
-    relationship_satisfaction = factor(relationship_satisfaction, levels = LBL_4POINT),
-    work_life_balance         = factor(work_life_balance,         levels = LBL_WLB),
-    performance_rating        = factor(performance_rating,        levels = LBL_PERF),
-    job_level                 = factor(job_level),
-    stock_option_level        = factor(stock_option_level),
-    gender                    = factor(gender),
-    department                = factor(department),
-    business_travel           = factor(business_travel),
-    over_time                 = factor(over_time),
-    marital_status            = factor(marital_status),
-    education_field           = factor(education_field),
-    job_role                  = factor(job_role)
-  )
-
-cat("Full dataset loaded for model overview:",
-    nrow(df_full), "rows x", ncol(df_full), "cols\n")
-
-# --- Step 1: Full logistic regression on ALL variables ---
-full_attrition_model <- glm(
-  attrition ~ .,
-  data   = df_full,
-  family = binomial(link = "logit")
-)
-
-# --- Step 2: Extract tidy odds ratios with 95% confidence intervals ---
-or_df <- tidy(full_attrition_model,
-              exponentiate = TRUE,
-              conf.int     = TRUE) %>%
-  filter(term != "(Intercept)") %>%
-  mutate(
-    significant = factor(
-      ifelse(p.value < 0.05, "Significant", "Not Significant"),
-      levels = c("Not Significant", "Significant")
-    )
-  )
-
-# --- Step 3: Forest plot (dark background style) ---
-plot_model_overview <- ggplot(
-  or_df,
-  aes(x = estimate, y = reorder(term, estimate), color = significant)
-) +
-  geom_errorbarh(
-    aes(xmin = conf.low, xmax = conf.high),
-    height = 0.4, linewidth = 0.55
-  ) +
-  geom_point(size = 2.2) +
-  geom_vline(
-    xintercept = 1,
-    linetype   = "dashed",
-    color      = "#AAAAAA",
-    linewidth  = 0.7
-  ) +
-  scale_color_manual(
-    values = c(
-      "Not Significant" = "#888888",
-      "Significant"     = COLOR_YES   # Section 4 config — red
-    )
-  ) +
-  scale_x_continuous(
-    limits = c(0, 10),
-    breaks = c(0, 2.5, 5.0, 7.5, 10.0)
-  ) +
-  labs(
-    title    = "Career Growth Model: What Predicts Attrition?",
-    subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
-    x        = "Odds Ratio",
-    y        = NULL,
-    color    = "Significance"
-  ) +
-  theme_dark(base_size = 11) +
-  theme(
-    plot.background   = element_rect(fill = "#1A1A1A", color = NA),
-    panel.background  = element_rect(fill = "#1A1A1A", color = NA),
-    panel.grid.major  = element_line(color = "#2E2E2E", linewidth = 0.4),
-    panel.grid.minor  = element_blank(),
-    plot.title        = element_text(face = "bold", size = 14,
-                                     hjust = 0.5, color = "white"),
-    plot.subtitle     = element_text(size = 9.5, hjust = 0.5,
-                                     color = "#CCCCCC"),
-    axis.text.y       = element_text(size = 7,  color = "#CCCCCC"),
-    axis.text.x       = element_text(size = 9,  color = "#CCCCCC"),
-    axis.title.x      = element_text(face = "bold", size = 10, color = "white"),
-    axis.ticks        = element_line(color = "#555555"),
-    legend.position   = "top",
-    legend.background = element_rect(fill = "#1A1A1A", color = NA),
-    legend.text       = element_text(color = "white", size = 9),
-    legend.title      = element_text(color = "white", size = 9, face = "bold"),
-    legend.key        = element_rect(fill = "#1A1A1A", color = NA),
-    plot.margin       = margin(15, 20, 10, 10)
-  )
-
-print(plot_model_overview)
-
-ggsave(
-  filename = "plot_analysis_3_5_model_overview.png",
-  plot     = plot_model_overview,
-  width    = 14,
-  height   = 16,
-  dpi      = 150,
-  bg       = "#1A1A1A"
-)
-
-message("[OK] Analysis Model Overview complete — plot saved to plot_analysis_3_5_model_overview.png")
-message("\n>>> OBJECTIVE 3 COMPLETE — Analysis 3-5 done.")
