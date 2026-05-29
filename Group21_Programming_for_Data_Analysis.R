@@ -847,7 +847,7 @@ cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
 
 
 # =============================================================================
-# SECTION 7.3 OBJECTIVE 3: CAREER GROWTH / STAGNATION ANALYSIS
+# Analysis 3 / OBJECTIVE 3: CAREER GROWTH / STAGNATION ANALYSIS
 # Name: [EE JIN XING, TP076848]
 #
 # Variables : YearsAtCompany, YearsInCurrentRole, YearsSinceLastPromotion,
@@ -859,8 +859,8 @@ cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
 
 # -----------------------------------------------------------------------------
 # STANDALONE BLOCK
-# Run this block if you are running Section 7.3 ONLY
-# (i.e. did NOT run Sections 1-6 and Section 7 in this session)
+# Run this block if you are running analysis 3 ONLY
+# (i.e. did NOT run Sections 1-6 and analysis 3 in this session)
 # If you already ran the full script above, this block safely skips itself
 # -----------------------------------------------------------------------------
 
@@ -932,7 +932,7 @@ cat("            with higher attrition.\n\n")
 
 
 # =============================================================================
-# 7.3.1  DESCRIPTIVE ANALYSIS
+# Analysis 3-1  DESCRIPTIVE ANALYSIS
 # =============================================================================
 
 cat("--- Career Growth Summary by Attrition Group ---\n")
@@ -968,11 +968,11 @@ print(training_table)
 cat("\nRow percentages:\n")
 print(round(prop.table(training_table, margin = 1) * 100, 1))
 
-message("[OK] 7.3.1 Descriptive Analysis complete.")
+message("[OK] Analysis 3-1 Descriptive Analysis complete.")
 
 
 # =============================================================================
-# 7.3.2  VISUALISATIONS
+# Analysis 3-2  VISUALISATIONS
 # =============================================================================
 
 # --- Pre-compute group means for plot annotations ---
@@ -1150,11 +1150,11 @@ grid.arrange(plot_3a, plot_3b, plot_3c, plot_3d,
              ncol = 2,
              top  = "OBJECTIVE 3: Career Growth / Stagnation & Attrition Analysis")
 
-message("[OK] 7.3.2 Visualisations complete.")
+message("[OK] analysis 3-2 Visualisations complete.")
 
 
 # =============================================================================
-# 7.3.3  STATISTICAL TESTS
+# Analysis 3-3  STATISTICAL TESTS
 # Purpose : Confirm that the visual patterns above are statistically
 #           significant and not due to random sampling variation
 # =============================================================================
@@ -1269,11 +1269,11 @@ career_stats <- tibble(
 cat("\n--- Career Growth Statistical Results Summary ---\n")
 print(career_stats)
 
-message("[OK] 7.3.3 Statistical Tests complete.")
+message("[OK] analysis 3-3 Statistical Tests complete.")
 
 
 # =============================================================================
-# 7.3.4  WHAT IF ANALYSIS — Career Growth Intervention Scenarios
+# Analysis 3-4  WHAT IF ANALYSIS — Career Growth Intervention Scenarios
 # Purpose : Simulate how targeted career growth changes shift the predicted
 #           probability of an employee leaving the organisation
 # Method  : Logistic regression trained on career growth variables only
@@ -1417,11 +1417,11 @@ print(plot_3e)
 # Overall: All three interventions lower attrition risk, confirming that career
 #   stagnation is a controllable, policy-addressable driver of employee turnover.
 
-message("[OK] 7.3.4 What If Analysis complete.")
+message("[OK] Analysis 3-4 What If Analysis complete.")
 
 
 # =============================================================================
-# 7.3.5  MODEL OVERVIEW — Full Logistic Regression (All Variables)
+# Analysis 3-5  MODEL OVERVIEW — Full Logistic Regression (All Variables)
 # Purpose : Show which predictors across the ENTIRE dataset are significant
 #           in predicting attrition — places career growth in full context
 # Style   : Dark background | Red = significant | Grey = not significant
@@ -1531,7 +1531,7 @@ plot_model_overview <- ggplot(
 print(plot_model_overview)
 
 ggsave(
-  filename = "plot_7_3_5_model_overview.png",
+  filename = "plot_analysis_3_5_model_overview.png",
   plot     = plot_model_overview,
   width    = 14,
   height   = 16,
@@ -1539,5 +1539,5 @@ ggsave(
   bg       = "#1A1A1A"
 )
 
-message("[OK] 7.3.5 Model Overview complete — plot saved to plot_7_3_5_model_overview.png")
-message("\n>>> OBJECTIVE 3 COMPLETE — Sections 7.3 to 7.3.5 done.")
+message("[OK] Analysis Model Overview complete — plot saved to plot_analysis_3_5_model_overview.png")
+message("\n>>> OBJECTIVE 3 COMPLETE — Analysis 3-5 done.")
