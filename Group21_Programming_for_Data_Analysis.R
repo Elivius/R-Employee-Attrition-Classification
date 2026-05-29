@@ -714,9 +714,510 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # =============================================================================
 
 
+# =============================================================================
+# Analysis 1: OBJECTIVE 1 — To investigate the relationship between salary 
+# compression including Monthly income, Percentage of salary hike and Stock 
+# option level with attrition
+# Member    : Joshua Yeo Jing Hao TP077315
+# Variables : Attrition, MonthlyIncome, PercentSalaryHike, StockOptionLevel, Job Level, Age
+# =============================================================================
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
+
+message("[OK] All libraries loaded — ready to proceed.")
 
 
+OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
+RANDOM_SEED <- 42     # keeps results the same every run
+TRAIN_SPLIT <- 0.80   # 80% trains the model, 20% tests it
 
+# --- 7.1 Verify Parquet File Exists Before Reading ---
+if (!file.exists(OUTPUT_PARQUET)) {
+  stop(
+    "\n[ERROR] Parquet file not found: '", OUTPUT_PARQUET, "'\n",
+    "Make sure Section 6 ran successfully and write_parquet() completed.\n"
+  )
+}
+
+cat("=== PARQUET DATA RETRIEVAL ===\n")
+cat("Source file  :", OUTPUT_PARQUET, "\n")
+
+# Objective 1 — Compensation
+df_obj1 <- read_parquet(
+  OUTPUT_PARQUET,
+  col_select = c("attrition", "monthly_income",
+                 "percent_salary_hike", "stock_option_level",
+                 "job_level", "age")
+)
+cat("Obj 1 (Compensation)  :", ncol(df_obj1), "cols loaded\n")
+
+
+# --- Re-apply factor levels after parquet read ---
+# Parquet preserves values but R-specific factor attributes
+# need to be reapplied for correct statistical modelling
+
+df_obj1 <- df_obj1 %>%
+  mutate(
+    attrition          = factor(attrition,
+                                levels = c("No", "Yes")),
+    stock_option_level = factor(stock_option_level,
+                                levels = c("0", "1", "2", "3")),
+    job_level          = factor(job_level)
+  )
+
+cat("\n[OK] Objective 1 dataset loaded and factors restored.\n")
+cat("     df_obj1 ready for analysis.\n")
+cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
+
+
+# --- Theme Settings ---
+# Consistent theme applied to all Objective 1 plots
+theme_comp <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle    = element_text(size = 11, hjust = 0.5, color = "grey50"),
+    axis.title       = element_text(face = "bold"),
+    legend.position  = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+# Colour mapping — blue = stayed, red = left
+comp_colors <- c("No" = "#2196F3", "Yes" = "#F44336")
+
+cat("\n=== OBJECTIVE 1: COMPENSATION ANALYSIS ===\n")
+cat("Variables  : MonthlyIncome, PercentSalaryHike, StockOptionLevel\n")
+cat("Dataset    : df_obj1 (", nrow(df_obj1), "rows x",
+    ncol(df_obj1), "cols from Parquet)\n")
+cat("Hypothesis : Lower compensation is significantly associated",
+    "with higher attrition\n\n")
+
+
+# =============================================================================
+# Analysis 1.1: DESCRIPTIVE STATISTICS
+# Understand compensation distribution before plotting
+# =============================================================================
+
+cat("--- Compensation Summary by Attrition Group ---\n")
+
+compensation_summary <- df_obj1 %>%
+  group_by(attrition) %>%
+  summarise(
+    n                = n(),
+    avg_monthly_income = round(mean(monthly_income,        na.rm = TRUE), 2),
+    med_monthly_income = round(median(monthly_income,      na.rm = TRUE), 2),
+    avg_salary_hike    = round(mean(percent_salary_hike,   na.rm = TRUE), 2),
+    med_salary_hike    = round(median(percent_salary_hike, na.rm = TRUE), 2),
+    .groups = "drop"
+  )
+
+print(compensation_summary)
+
+# Stock option distribution by attrition
+cat("\n--- Stock Option Level Distribution by Attrition ---\n")
+stock_table <- table(df_obj1$stock_option_level, df_obj1$attrition)
+print(stock_table)
+cat("\nRow percentages:\n")
+print(round(prop.table(stock_table, margin = 1) * 100, 1))
+
+
+# =============================================================================
+# Analysis 1.2: VISUALISATIONS
+# 4 plots — one per compensation variable + one deep dive by job level
+# =============================================================================
+
+# --- Prepare summary stats used across multiple plots ---
+income_summary <- df_obj1 %>%
+  group_by(attrition) %>%
+  summarise(
+    n      = n(),
+    mean   = round(mean(monthly_income,   na.rm = TRUE), 0),
+    median = round(median(monthly_income, na.rm = TRUE), 0),
+    .groups = "drop"
+  )
+
+hike_summary <- df_obj1 %>%
+  group_by(attrition) %>%
+  summarise(
+    mean_hike = round(mean(percent_salary_hike, na.rm = TRUE), 2),
+    .groups   = "drop"
+  )
+
+
+# --- Plot 1: Monthly Income vs Attrition ---
+# Boxplot + jitter shows both distribution and individual data points
+# Median labels show exact RM values — supports the "quantify" requirement
+# White diamond = mean | horizontal line = median
+plot1a <- ggplot(df_obj1,
+                 aes(x = attrition, y = monthly_income, fill = attrition)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.2,
+               outlier.size = 1, width = 0.5) +
+  geom_jitter(aes(color = attrition),
+              width = 0.15, alpha = 0.15, size = 0.8) +
+  stat_summary(fun  = mean, geom = "point",
+               shape = 18, size = 4, color = "white") +
+  geom_text(data = income_summary,
+            aes(x     = attrition,
+                y     = median,
+                label = paste0("Median:\nRM", comma(median))),
+            nudge_x     = 0.35,
+            size        = 3.5,
+            fontface    = "bold",
+            inherit.aes = FALSE) +
+  scale_fill_manual(values  = comp_colors) +
+  scale_color_manual(values = comp_colors) +
+  scale_y_continuous(labels = comma,
+                     expand = expansion(mult = c(0.1, 0.05))) +
+  labs(
+    title   = "Monthly Income Distribution by Attrition",
+    x       = "Attrition Status",
+    y       = "Monthly Income (RM)",
+    fill    = "Attrition",
+    caption = "White diamond = Mean | Line = Median | Points = Individual employees"
+  ) +
+  theme_comp +
+  theme(legend.position = "none")
+
+print(plot1a)
+
+
+# --- Plot 2: Salary Hike % vs Attrition ---
+# Overlaid density plot — best for narrow range (11-25%)
+# Smoother and clearer than histogram for comparing two groups
+# Dashed lines show each group mean
+plot1b <- ggplot(df_obj1 %>% filter(!is.na(percent_salary_hike)),
+                 aes(x     = percent_salary_hike,
+                     fill  = attrition,
+                     color = attrition)) +
+  geom_density(alpha = 0.4, linewidth = 1) +
+  geom_vline(data = hike_summary,
+             aes(xintercept = mean_hike, color = attrition),
+             linetype  = "dashed",
+             linewidth = 1) +
+  geom_text(data = hike_summary,
+            aes(x     = mean_hike,
+                y     = 0.15,
+                label = paste0(attrition, "\nMean: ", mean_hike, "%"),
+                color = attrition),
+            nudge_x     = 0.8,
+            size        = 3.2,
+            fontface    = "bold",
+            inherit.aes = FALSE) +
+  scale_fill_manual(values  = comp_colors) +
+  scale_color_manual(values = comp_colors) +
+  labs(
+    title    = "Salary Hike % Distribution by Attrition",
+    subtitle = "Dashed lines show group means",
+    x        = "Percent Salary Hike (%)",
+    y        = "Density",
+    fill     = "Attrition",
+    color    = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1b)
+
+
+# --- Plot 3: Stock Option Level vs Attrition ---
+# 100% stacked bar — shows BOTH stayed and left proportions simultaneously
+# More informative than showing only attrition rate
+# White labels inside bars show exact percentages
+plot1c <- df_obj1 %>%
+  count(stock_option_level, attrition) %>%
+  group_by(stock_option_level) %>%
+  mutate(
+    pct   = n / sum(n),
+    label = paste0(round(pct * 100, 1), "%")
+  ) %>%
+  ggplot(aes(x    = factor(stock_option_level),
+             y    = pct,
+             fill = attrition)) +
+  geom_col(position = "fill", alpha = 0.85, width = 0.6) +
+  geom_text(aes(label = label),
+            position = position_fill(vjust = 0.5),
+            size     = 3.5,
+            fontface = "bold",
+            color    = "white") +
+  scale_fill_manual(values = comp_colors) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(
+    title    = "Attrition Proportion by Stock Option Level",
+    subtitle = "Level 2 shows lowest attrition — Level 3 shows unexpected spike",
+    x        = "Stock Option Level (0 = None, 3 = High)",
+    y        = "Proportion (%)",
+    fill     = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1c)
+
+
+# --- Plot 4: Income by Job Level ---
+# Shows whether income gap exists consistently at EVERY seniority level
+# Directly supports the "quantify" requirement in the objective
+plot1d <- df_obj1 %>%
+  group_by(job_level, attrition) %>%
+  summarise(
+    median_income = median(monthly_income, na.rm = TRUE),
+    n             = n(),
+    .groups       = "drop"
+  ) %>%
+  ggplot(aes(x    = factor(job_level),
+             y    = median_income,
+             fill = attrition)) +
+  geom_col(position = "dodge", alpha = 0.85, width = 0.7) +
+  geom_text(aes(label = comma(round(median_income, 0))),
+            position = position_dodge(width = 0.7),
+            vjust    = -0.4,
+            size     = 3,
+            fontface = "bold") +
+  scale_fill_manual(values = comp_colors) +
+  scale_y_continuous(labels = comma,
+                     expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title    = "Median Income by Job Level and Attrition",
+    subtitle = "Does the income gap exist at every seniority level?",
+    x        = "Job Level",
+    y        = "Median Monthly Income (RM)",
+    fill     = "Attrition"
+  ) +
+  theme_comp
+
+print(plot1d)
+
+
+# --- Display all 4 plots in a 2x2 grid ---
+grid.arrange(plot1a, plot1b, plot1c, plot1d,
+             ncol = 2,
+             top  = "OBJECTIVE 1: Compensation & Attrition Analysis")
+
+
+# =============================================================================
+# Analysis 1.3: STATISTICAL TESTS
+# Prove findings are statistically significant, not just coincidence
+# =============================================================================
+
+cat("\n--- Statistical Tests: Compensation vs Attrition ---\n")
+
+# --- Test 1: T-Test — Monthly Income ---
+# Use: comparing a numeric variable between two groups (stayed vs left)
+# Null hypothesis: no difference in mean income between groups
+ttest_income <- t.test(monthly_income ~ attrition, data = df_obj1)
+
+cat("\n1. T-Test: Monthly Income vs Attrition\n")
+cat("   Mean income (Stayed) :", round(ttest_income$estimate[1], 2), "\n")
+cat("   Mean income (Left)   :", round(ttest_income$estimate[2], 2), "\n")
+cat("   Difference           :", round(diff(ttest_income$estimate), 2), "\n")
+cat("   T-statistic          :", round(ttest_income$statistic, 4), "\n")
+cat("   P-value              :", round(ttest_income$p.value, 6), "\n")
+cat("   Result               :", ifelse(ttest_income$p.value < 0.05,
+                                        "SIGNIFICANT — income differs significantly between groups",
+                                        "NOT significant"), "\n")
+
+
+# --- Test 2: T-Test — Salary Hike % ---
+# Null hypothesis: no difference in mean salary hike between groups
+ttest_hike <- t.test(percent_salary_hike ~ attrition, data = df_obj1)
+
+cat("\n2. T-Test: Salary Hike % vs Attrition\n")
+cat("   Mean hike (Stayed) :", round(ttest_hike$estimate[1], 2), "%\n")
+cat("   Mean hike (Left)   :", round(ttest_hike$estimate[2], 2), "%\n")
+cat("   T-statistic        :", round(ttest_hike$statistic, 4), "\n")
+cat("   P-value            :", round(ttest_hike$p.value, 6), "\n")
+cat("   Result             :", ifelse(ttest_hike$p.value < 0.05,
+                                      "SIGNIFICANT — salary hike differs significantly between groups",
+                                      "NOT significant"), "\n")
+
+
+# --- Test 3: Chi-Square — Stock Option Level ---
+# Use: testing association between two categorical variables
+# Null hypothesis: stock option level and attrition are independent
+chisq_stock <- chisq.test(
+  table(df_obj1$stock_option_level, df_obj1$attrition)
+)
+
+cat("\n3. Chi-Square: Stock Option Level vs Attrition\n")
+cat("   Chi-square statistic :", round(chisq_stock$statistic, 4), "\n")
+cat("   Degrees of freedom   :", chisq_stock$parameter, "\n")
+cat("   P-value              :", round(chisq_stock$p.value, 6), "\n")
+cat("   Result               :", ifelse(chisq_stock$p.value < 0.05,
+                                        "SIGNIFICANT — stock options are associated with attrition",
+                                        "NOT significant"), "\n")
+
+
+# --- Collect all test results into one clean summary table ---
+comp_stats <- tibble(
+  test        = c("T-Test", "T-Test", "Chi-Square"),
+  variable    = c("Monthly Income", "Salary Hike %", "Stock Option Level"),
+  statistic   = c(round(ttest_income$statistic, 4),
+                  round(ttest_hike$statistic, 4),
+                  round(chisq_stock$statistic, 4)),
+  p_value     = c(round(ttest_income$p.value, 6),
+                  round(ttest_hike$p.value, 6),
+                  round(chisq_stock$p.value, 6)),
+  significant = ifelse(
+    c(ttest_income$p.value,
+      ttest_hike$p.value,
+      chisq_stock$p.value) < 0.05,
+    "YES ***", "NO"
+  ),
+  conclusion  = c(
+    ifelse(ttest_income$p.value < 0.05,
+           "Monthly income significantly lower for employees who left",
+           "No significant income difference"),
+    ifelse(ttest_hike$p.value < 0.05,
+           "Salary hike % significantly differs by attrition",
+           "No significant salary hike difference"),
+    ifelse(chisq_stock$p.value < 0.05,
+           "Stock option level significantly associated with attrition",
+           "No significant association")
+  )
+)
+
+cat("\n--- Compensation Statistical Results Summary ---\n")
+print(comp_stats)
+
+
+# =============================================================================
+# Analysis 1.4: WHAT-IF ANALYSIS
+# Simulate the effect of compensation policy changes on predicted attrition
+# Uses logistic regression to predict new attrition probabilities
+# =============================================================================
+
+cat("\n\n--- What-If Analysis: Compensation Policy Simulation ---\n")
+
+# Build compensation-focused logistic regression
+# Uses df_obj1 — loaded from parquet with compensation columns only
+compensation_model_data <- df_obj1 %>%
+  mutate(
+    stock_option_level = factor(stock_option_level),
+    job_level          = factor(job_level)
+  ) %>%
+  drop_na()
+
+set.seed(RANDOM_SEED)
+compensation_split <- initial_split(compensation_model_data,
+                                    prop = TRAIN_SPLIT,
+                                    strata = attrition)
+compensation_train <- training(compensation_split)
+compensation_test  <- testing(compensation_split)
+
+compensation_recipe <- recipe(attrition ~ ., data = compensation_train) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_dummy(all_nominal_predictors())
+
+compensation_log_model <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+
+compensation_workflow <- workflow() %>%
+  add_recipe(compensation_recipe) %>%
+  add_model(compensation_log_model)
+
+compensation_fit <- compensation_workflow %>%
+  fit(data = compensation_train)
+
+cat("[OK] Compensation model trained.\n\n")
+
+# Baseline — current predicted attrition rate
+pred_current <- predict(compensation_fit,
+                        compensation_model_data,
+                        type = "prob")$.pred_Yes
+current_rate   <- mean(pred_current) * 100
+
+
+# --- Scenario 1: 10% Salary Increase for ALL employees ---
+scenario1 <- compensation_model_data %>%
+  mutate(monthly_income = monthly_income * 1.10)
+
+pred_scenario1 <- predict(compensation_fit, scenario1,
+                          type = "prob")$.pred_Yes
+scenario1_rate <- mean(pred_scenario1) * 100
+
+cat("Scenario 1: 10% Salary Increase for All Employees\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after 10% increase :", round(scenario1_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario1_rate, 1), "%\n\n")
+
+
+# --- Scenario 2: Minimum Salary Hike of 15% ---
+scenario2 <- compensation_model_data %>%
+  mutate(percent_salary_hike = pmax(percent_salary_hike, 15))
+
+pred_scenario2 <- predict(compensation_fit, scenario2,
+                          type = "prob")$.pred_Yes
+scenario2_rate <- mean(pred_scenario2) * 100
+
+cat("Scenario 2: Minimum Salary Hike of 15% for All Employees\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after policy change:", round(scenario2_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario2_rate, 1), "%\n\n")
+
+
+# --- Scenario 3: Give Stock Options to Employees with Level 0 ---
+scenario3 <- compensation_model_data %>%
+  mutate(
+    stock_option_level = factor(
+      ifelse(as.numeric(as.character(stock_option_level)) == 0,
+             1,
+             as.numeric(as.character(stock_option_level)))
+    )
+  )
+
+pred_scenario3 <- predict(compensation_fit, scenario3,
+                          type = "prob")$.pred_Yes
+scenario3_rate <- mean(pred_scenario3) * 100
+
+cat("Scenario 3: Provide Minimum Stock Options to Employees with None\n")
+cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
+cat("  Predicted rate after policy change:", round(scenario3_rate, 1), "%\n")
+cat("  Predicted reduction               :",
+    round(current_rate - scenario3_rate, 1), "%\n\n")
+
+
+# --- What-If Summary Plot ---
+whatif_data <- tibble(
+  scenario = c(
+    "Current",
+    "10% Salary\nIncrease",
+    "Min 15%\nSalary Hike",
+    "Stock Options\nfor All"
+  ),
+  attrition_rate = c(
+    current_rate,
+    scenario1_rate,
+    scenario2_rate,
+    scenario3_rate
+  )
+)
+
+whatif_plot <- ggplot(whatif_data,
+                      aes(x    = fct_inorder(scenario),
+                          y    = attrition_rate,
+                          fill = scenario == "Current")) +
+  geom_col(alpha = 0.85, width = 0.65, show.legend = FALSE) +
+  geom_text(aes(label = paste0(round(attrition_rate, 1), "%")),
+            vjust    = -0.4,
+            size     = 4,
+            fontface = "bold") +
+  scale_fill_manual(values = c("TRUE" = "#F44336", "FALSE" = "#2196F3")) +
+  scale_y_continuous(labels = percent_format(scale = 1),
+                     expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title    = "What-If Analysis: Impact of Compensation Policy Changes",
+    subtitle = "Predicted attrition rate under 3 different policy scenarios",
+    x        = "Policy Scenario",
+    y        = "Predicted Attrition Rate (%)",
+    caption  = "Red = current baseline | Blue = policy scenarios"
+  ) +
+  theme_comp
+
+print(whatif_plot)
+
+message("\n[OK] Section 7 — Objective 1 (Compensation) complete.")
 
 
 
