@@ -969,7 +969,7 @@ heatmap_data <- df_clean %>%
 cat("\nInteraction Table — Attrition Rate (%) by Marital Status × Overtime:\n")
 print(heatmap_data)
 
-p_obj2_5 <- heatmap_data %>%
+p_obj2_5a <- heatmap_data %>%
   ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
   geom_tile(colour = "white", linewidth = 1.5) +
   geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
@@ -984,7 +984,7 @@ p_obj2_5 <- heatmap_data %>%
   OBJ2_THEME +
   theme(legend.position = "right")
 
-print(p_obj2_5)
+print(p_obj2_5a)
 
 
 # B. 3-way Interaction Heatmap — Marital Status × Overtime × Business Travel
@@ -1000,7 +1000,7 @@ heatmap_data_3way <- df_clean %>%
 cat("\n3-Way Interaction Table — Attrition Rate (%) with Travel:\n")
 print(heatmap_data_3way)
 
-p_obj2_6 <- heatmap_data_3way %>%
+p_obj2_5b <- heatmap_data_3way %>%
   ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
   geom_tile(colour = "white", linewidth = 1.5) +
   geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
@@ -1022,7 +1022,7 @@ p_obj2_6 <- heatmap_data_3way %>%
     strip.text = element_text(face = "bold", size = 11) # Makes the facet headers stand out cleanly
   )
 
-print(p_obj2_6)
+print(p_obj2_5b)
 
 
 # =============================================================================
@@ -1064,7 +1064,7 @@ cat("  OR < 1  → decreases attrition risk   (e.g. 0.60 = 40% less likely)\n")
 cat("  CI crossing 1.0 → NOT statistically significant\n")
 
 # E. Forest Plot — Visual Summary of Logistic Regression
-p_obj2_7 <- odds_df %>%
+p_obj2_6 <- odds_df %>%
   mutate(
     # Clean labels for display
     label = case_when(
@@ -1092,7 +1092,7 @@ p_obj2_7 <- odds_df %>%
   ) +
   OBJ2_THEME
 
-print(p_obj2_7)
+print(p_obj2_6)
 
 
 # =============================================================================
