@@ -2705,3 +2705,106 @@ cat(sprintf("  Plots saved to   : %s/\n", OUTPUT_DIR))
 message("========================================================\n")
 
 message("\n[OK] Section 7 — Objective 4 (Culture Dissatisfaction) complete.")
+
+
+# Extra feature 1
+# Pacman
+# if (!require("pacman")) install.packages("pacman")
+# pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
+
+# Instead of the standard manual install and load approach, pacman does the check,
+# install and load workflow in one single line. This is more efficient and
+# professional than writing separate install.library() and packages() calls.
+
+# =============================================================================
+
+# Extra feature 2
+# Parquet
+# OUTPUT_PARQUET <- "employee_attrition_cleaned.parquet"
+
+# df_clean <- read_parquet(
+#   OUTPUT_PARQUET,
+#   col_select = c("attrition", "over_time", "business_travel",
+#                  "distance_from_home", "marital_status")
+# )
+# cat("Obj 2 (Burnout) loaded:", nrow(df_clean), "rows x", ncol(df_clean), "cols\n")
+
+
+# In addition to the standard CSV export, after all cleaning and validation steps,
+# the cleaned data set was serialized into Apache Parquet format using write_parquet() from the arrow package.
+# Parquet is a binary columnar storage file format, that organizes data by column rather than by row
+
+# =============================================================================
+
+# Extra feature 3
+# =============================================================================
+# LOGISTIC REGRESSION MODEL FOR ATTRITION
+# =============================================================================
+
+message("\n--- Logistic Regression ---")
+
+# A. Read ALL columns from parquet for full-variable model
+df_logit <- read_parquet(OUTPUT_PARQUET) %>%
+  mutate(attr_bin = ifelse(attrition == "Yes", 1, 0)) %>%
+  select(-attrition) %>%
+  
+  # Structural Hierarchy Anchors
+  mutate(job_level = relevel(factor(job_level), ref = "5")) %>%
+  mutate(stock_option_level = relevel(factor(stock_option_level), ref = "3")) %>%
+  
+  # Workplace & Employee Survey Anchors (Flipping to capture the downside risk)
+  mutate(environment_satisfaction  = relevel(factor(environment_satisfaction), ref = "Very High")) %>%
+  mutate(job_satisfaction          = relevel(factor(job_satisfaction), ref = "Very High")) %>%
+  mutate(job_involvement           = relevel(factor(job_involvement), ref = "Very High")) %>%
+  mutate(relationship_satisfaction = relevel(factor(relationship_satisfaction), ref = "Very High")) %>%
+  mutate(work_life_balance         = relevel(factor(work_life_balance), ref = "Best"))
+
+# B. Fit Model - glm() + binomial() = logistic regression
+model_burnout <- glm(
+  attr_bin ~ .,
+  data   = df_logit,
+  family = binomial()
+)
+
+cat("Model Summary:\n")
+print(summary(model_burnout))
+
+# C. Odds Ratios with 95% Confidence Intervals
+odds_df <- data.frame(
+  term      = names(coef(model_burnout)),
+  odds      = exp(coef(model_burnout)),
+  ci_low    = exp(confint.default(model_burnout)[, 1]),
+  ci_high   = exp(confint.default(model_burnout)[, 2])
+)
+odds_df <- odds_df[odds_df$term != "(Intercept)", ]   # drop intercept
+rownames(odds_df) <- NULL
+
+cat("\nOdds Ratios (95% CI):\n")
+print(odds_df)
+
+# D. Interpretation Guide
+cat("\n--- How to read Odds Ratios ---\n")
+cat("  OR > 1  → increases attrition risk   (e.g. 3.36 = 3.36× more likely)\n")
+cat("  OR < 1  → decreases attrition risk   (e.g. 0.60 = 40% less likely)\n")
+cat("  CI crossing 1.0 → NOT statistically significant\n")
+
+# E. Forest Plot — Visual Summary of Logistic Regression
+p_logit <- odds_df %>%
+  mutate(
+    # Flag significance: CI does not cross 1.0
+    significant = ifelse(ci_low > 1 | ci_high < 1, "Significant", "Not Significant")
+  ) %>%
+  ggplot(aes(x = odds, y = reorder(term, odds), colour = significant)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_point(size = 3.5) +
+  geom_errorbarh(aes(xmin = ci_low, xmax = ci_high), height = 0.2, linewidth = 0.8) +
+  scale_colour_manual(values = c("Significant" = COLOR_YES,
+                                 "Not Significant" = "grey60")) +
+  labs(
+    title    = "Burnout Model: What Predicts Attrition?",
+    subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
+    x = "Odds Ratio", y = NULL, colour = "Significance"
+  ) +
+  OBJ2_THEME
+
+print(p_logit)
