@@ -1134,10 +1134,10 @@ message("\n[OK] Section 7 — Objective 2 (Burnout & Work-Life Pressure) complet
 
 
 # =============================================================================
-# 8.0 LOGISTIC REGRESSION MODEL FOR ATTRITION
+# LOGISTIC REGRESSION MODEL FOR ATTRITION
 # =============================================================================
 
-message("\n--- 8.0 Logistic Regression ---")
+message("\n--- Logistic Regression ---")
 
 # A. Read ALL columns from parquet for full-variable model
 df_logit <- read_parquet(OUTPUT_PARQUET) %>%
@@ -1185,7 +1185,7 @@ cat("  OR < 1  → decreases attrition risk   (e.g. 0.60 = 40% less likely)\n")
 cat("  CI crossing 1.0 → NOT statistically significant\n")
 
 # E. Forest Plot — Visual Summary of Logistic Regression
-p_obj2_8 <- odds_df %>%
+p_logit <- odds_df %>%
   mutate(
     # Flag significance: CI does not cross 1.0
     significant = ifelse(ci_low > 1 | ci_high < 1, "Significant", "Not Significant")
@@ -1201,6 +1201,6 @@ p_obj2_8 <- odds_df %>%
     subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
     x = "Odds Ratio", y = NULL, colour = "Significance"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
-print(p_obj2_8)
+print(p_logit)
