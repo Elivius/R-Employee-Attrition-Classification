@@ -29,8 +29,8 @@ This objective employs a four-tier analytical framework:
 
 - **Tier 1 — Descriptive:** Proportional bar charts, violin plots, and heatmaps to establish baseline attrition rates and visualise patterns across each burnout variable.
 - **Tier 2 — Diagnostic:** Chi-Square tests, Cramér's V effect sizes, and Kruskal-Wallis rank-sum tests to determine whether observed patterns are statistically significant rather than attributable to random chance.
-- **Tier 3 — Predictive:** A burnout-scoped multivariate logistic regression (Analysis 2-6) combining all four burnout variables to quantify each factor's independent contribution to attrition risk while controlling for the simultaneous influence of the others.
-- **Tier 4 — Prescriptive:** Actionable HR intervention protocols (e.g., targeted well-being check-ins and workload reviews) derived from the compounding risk profiles identified in the interaction heatmaps and predictive models.
+- **Tier 3 — Multivariate Diagnostic:** A burnout-scoped logistic regression (Analysis 2-6) combining all four burnout variables to quantify each factor's independent contribution to attrition risk while controlling for the simultaneous influence of the others.
+- **Tier 4 — Prescriptive:** Actionable HR intervention protocols (e.g., targeted well-being check-ins and workload reviews) derived from the compounding risk profiles identified in the interaction heatmaps and diagnostic models.
 
 The Extra Feature extends Tier 3 further with a full all-variable model across the entire dataset, using the results to identify unexpected significant predictors — specifically Job Level — and then investigating the underlying mechanism with follow-up heatmaps.
 
@@ -178,7 +178,7 @@ This approach provides a **prescriptive view** — it identifies not just which 
 
 ---
 
-## Analysis 2-6: Burnout Predictive Model — Logistic Regression (4 Variables)
+## Analysis 2-6: Multivariate Diagnostic Model — Logistic Regression (4 Variables)
 
 ### Analysis Techniques & Justification
 
