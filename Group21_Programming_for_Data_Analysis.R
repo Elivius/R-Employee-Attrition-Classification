@@ -228,17 +228,6 @@ OUTPUT_CSV       <- "employee_attrition_cleaned.csv"
 OUTPUT_PARQUET   <- "employee_attrition_cleaned.parquet"
 OUTPUT_STATS_CSV <- "statistical_test_results.csv"
 
-# --- Model Settings ---
-RANDOM_SEED <- 42     # keeps results the same every run
-TRAIN_SPLIT <- 0.80   # 80% trains the model, 20% tests it
-
-# --- Plot Colour Palette ---
-COLOR_NO     <- "#2196F3"   # blue   = stayed
-COLOR_YES    <- "#F44336"   # red    = left
-COLOR_BAR    <- "#9C27B0"   # purple = bar charts
-COLOR_ORANGE <- "#FF9800"   # orange = training chart
-COLOR_GREEN  <- "#4CAF50"   # green  = no overtime
-
 # --- Factor Label Sets ---
 # Defined once here — reused in Section 5
 # You know these from your dataset description file
