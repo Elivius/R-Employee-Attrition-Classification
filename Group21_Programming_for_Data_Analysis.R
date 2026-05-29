@@ -1,9 +1,13 @@
 # =============================================================================
+# 
 # EMPLOYEE ATTRITION CLASSIFICATION
 # Group Number : GROUP 21
-# Members      : [Joshua Yeo Jing Hao, TP077315], [Chin Kai Jack, TP076605],
-#                [Ee Jin Xing, TP076848], [Lee Hong Yi, TP076604]
-# Date         : -
+# Members      :
+# [Joshua Yeo Jing Hao, TP077315]
+# [Chin Kai Jack, TP076605]
+# [Ee Jin Xing, TP076848]
+# [Lee Hong Yi, TP076604]
+# 
 # =============================================================================
 #
 # SCRIPT OVERVIEW
