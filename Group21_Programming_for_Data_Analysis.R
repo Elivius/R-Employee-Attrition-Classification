@@ -718,12 +718,9 @@ message("[OK] Clean dataset saved to: ", OUTPUT_PARQUET)
 message("[OK] Clean data saved as CSV and Optimized Parquet.")
 message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 
-# =============================================================================
-# SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
-# Each group member writes their assigned objective below this line
-# =============================================================================
 
-# Section 7.1 Objective 1: Compensation
+
+# Analysis 1: Compensation
 # Name: Joshua Yeo Jing Hao TP077315
 
 if (!require("pacman")) install.packages("pacman")
@@ -744,50 +741,6 @@ if (!file.exists(OUTPUT_PARQUET)) {
 
 cat("=== PARQUET DATA RETRIEVAL ===\n")
 cat("Source file  :", OUTPUT_PARQUET, "\n")
-
-# --- Full dataset read (for anything needing all columns) ---
-df_analysis <- read_parquet(OUTPUT_PARQUET)
-cat("Full dataset :", nrow(df_analysis), "rows x",
-    ncol(df_analysis), "cols\n\n")
-
-# --- Objective-specific columnar reads ---
-# Each objective only loads the columns it needs
-# This is the core benefit of Parquet over CSV
-
-# Objective 1 — Compensation
-df_obj1 <- read_parquet(
-  OUTPUT_PARQUET,
-  col_select = c("attrition", "monthly_income",
-                 "percent_salary_hike", "stock_option_level",
-                 "job_level", "age")
-)
-cat("Obj 1 (Compensation)  :", ncol(df_obj1), "cols loaded\n")
-
-# Objective 2 — Burnout
-df_obj2 <- read_parquet(
-  OUTPUT_PARQUET,
-  col_select = c("attrition", "over_time",
-                 "business_travel", "distance_from_home")
-)
-cat("Obj 2 (Burnout)       :", ncol(df_obj2), "cols loaded\n")
-
-# Objective 3 — Career Growth
-df_obj3 <- read_parquet(
-  OUTPUT_PARQUET,
-  col_select = c("attrition", "years_since_last_promotion",
-                 "training_times_last_year", "years_at_company",
-                 "job_level")
-)
-cat("Obj 3 (Career Growth) :", ncol(df_obj3), "cols loaded\n")
-
-# Objective 4 — Culture
-df_obj4 <- read_parquet(
-  OUTPUT_PARQUET,
-  col_select = c("attrition", "environment_satisfaction",
-                 "job_satisfaction", "work_life_balance",
-                 "relationship_satisfaction")
-)
-cat("Obj 4 (Culture)       :", ncol(df_obj4), "cols loaded\n")
 
 
 # --- Re-apply factor levels after parquet read ---
@@ -842,12 +795,9 @@ cat("\n>>> Proceed to Section 7.1 — Objective 1: Compensation\n")
 
 
 # =============================================================================
-# SECTION 7.1: OBJECTIVE 1 — COMPENSATION ANALYSIS
+# Analysis 1: OBJECTIVE 1 — COMPENSATION ANALYSIS
 # Member    : Joshua Yeo Jing Hao TP077315
 # Variables : MonthlyIncome, PercentSalaryHike, StockOptionLevel
-# Hypothesis: Employees experiencing salary compression are significantly
-#             more likely to leave than those receiving competitive compensation
-# Dataset   : df_obj1 (loaded from parquet — compensation columns only)
 # =============================================================================
 
 # --- Theme Settings ---
@@ -874,7 +824,7 @@ cat("Hypothesis : Lower compensation is significantly associated",
 
 
 # =============================================================================
-# SECTION 7.1.1: DESCRIPTIVE STATISTICS
+# Analysis 1.1: DESCRIPTIVE STATISTICS
 # Understand compensation distribution before plotting
 # =============================================================================
 
@@ -902,7 +852,7 @@ print(round(prop.table(stock_table, margin = 1) * 100, 1))
 
 
 # =============================================================================
-# SECTION 7.1.2: VISUALISATIONS
+# Analysis 1.2: VISUALISATIONS
 # 4 plots — one per compensation variable + one deep dive by job level
 # =============================================================================
 
@@ -1073,9 +1023,8 @@ grid.arrange(plot1a, plot1b, plot1c, plot1d,
 
 
 # =============================================================================
-# SECTION 7.1.3: STATISTICAL TESTS
-# Prove findings are statistically significant — not just coincidence
-# p-value < 0.05 = significant | p-value > 0.05 = could be chance
+# Analysis 1.3: STATISTICAL TESTS
+# Prove findings are statistically significant, not just coincidence
 # =============================================================================
 
 cat("\n--- Statistical Tests: Compensation vs Attrition ---\n")
@@ -1160,7 +1109,7 @@ print(comp_stats)
 
 
 # =============================================================================
-# SECTION 7.1.4: WHAT-IF ANALYSIS
+# Analysis 1.4: WHAT-IF ANALYSIS
 # Simulate the effect of compensation policy changes on predicted attrition
 # Uses logistic regression to predict new attrition probabilities
 # =============================================================================
@@ -1296,59 +1245,3 @@ whatif_plot <- ggplot(whatif_data,
   theme_comp
 
 print(whatif_plot)
-
-# Section 7.6: Written Interpretation
-# Summary of the findings of the objective Compensation
-cat("\n\n--- OBJECTIVE 1 FINDINGS & INTERPRETATION ---\n")
-
-income_diff <- round(abs(diff(ttest_income$estimate)), 0)
-hike_diff   <- round(abs(diff(ttest_hike$estimate)), 2)
-
-cat("
-OBJECTIVE 1: COMPENSATION ANALYSIS — KEY FINDINGS
-==================================================
-
-FINDING 1 — Monthly Income
-Employees who left the organisation earned an average of RM",
-income_diff, "less per month
-than those who stayed. This difference was statistically significant
-(p =", round(ttest_income$p.value, 4), "), confirming that monthly income
-is a significant predictor of attrition. Lower-paid employees face
-greater financial motivation to seek better-paying opportunities elsewhere.
-
-FINDING 2 — Salary Hike Percentage
-The average salary hike for employees who left was", round(ttest_hike$estimate[2], 1),
-    "% compared to", round(ttest_hike$estimate[1], 1), "% for those who stayed.
-This", ifelse(ttest_hike$p.value < 0.05, "statistically significant",
-              "non-significant"), "difference (p =", round(ttest_hike$p.value, 4), ")
-suggests that employees receiving smaller annual raises are",
-    ifelse(ttest_hike$p.value < 0.05, "significantly", ""), "more likely
-to leave the organisation.
-
-FINDING 3 — Stock Option Level
-The Chi-Square test revealed a", ifelse(chisq_stock$p.value < 0.05,
-                                        "statistically significant", "non-significant"),
-    "association between stock option level and attrition
-(p =", round(chisq_stock$p.value, 4), "). Employees with no stock options
-(Level 0) showed the highest attrition rate, while those with higher
-stock option levels demonstrated stronger retention — suggesting that
-equity compensation creates meaningful organisational commitment.
-
-WHAT-IF ANALYSIS SUMMARY
-A 10% salary increase across all employees is predicted to reduce
-attrition by", round(current_rate - scenario1_rate, 1), "percentage points.
-Introducing a minimum 15% salary hike policy is predicted to reduce
-attrition by", round(current_rate - scenario2_rate, 1), "percentage points.
-Providing minimum stock options to employees currently receiving none
-is predicted to reduce attrition by",
-    round(current_rate - scenario3_rate, 1), "percentage points.
-
-RECOMMENDATION
-Based on these findings, HR should:
-1. Review salary bands for employees earning below the median income
-   to identify and address cases of salary compression
-2. Implement a minimum salary hike of 15% for high-performing employees
-   to signal investment in their long-term growth
-3. Extend stock option eligibility to all employee levels — particularly
-   junior and mid-level staff who currently receive no equity compensation
-")
