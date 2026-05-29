@@ -1138,8 +1138,7 @@ scenario1_rate <- mean(pred_scenario1) * 100
 cat("Scenario 1: 10% Salary Increase for All Employees\n")
 cat("  Current predicted attrition rate  :", round(current_rate, 1),   "%\n")
 cat("  Predicted rate after 10% increase :", round(scenario1_rate, 1), "%\n")
-cat("  Predicted reduction               :",
-    round(current_rate - scenario1_rate, 1), "%\n\n")
+cat("  Predicted reduction               :", round(current_rate - scenario1_rate, 1), "%\n\n")
 
 
 # --- Scenario 2: Minimum Salary Hike of 15% ---
