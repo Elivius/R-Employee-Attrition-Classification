@@ -835,6 +835,10 @@ plot71_data <- df_clean %>%
     .groups = "drop"
   )
 
+cat("\n=== 7.1 Summary: Attrition Rate by Satisfaction Level ===\n")
+print(plot71_data, n = Inf)
+cat("\n")
+
 plot71 <- ggplot(
   plot71_data,
   aes(x = level, y = attrition_rate, fill = variable)
@@ -893,6 +897,10 @@ plot72_data <- df_clean %>%
   ) %>%
   ungroup()
 
+cat("\n=== 7.2 Summary: Work-Life Balance Attrition Breakdown ===\n")
+print(plot72_data, n = Inf)
+cat("\n")
+
 # Rate label — shown only on the "Yes" bar segment for readability
 rate_labels <- plot72_data %>%
   filter(attrition == "Yes") %>%
@@ -912,7 +920,7 @@ plot72 <- ggplot(
     data = rate_labels,
     aes(x = work_life_balance, y = n / 2, label = label),
     colour = "white", size = 3, fontface = "bold",
-    inherit.aes = FALSE
+    vjust = 0, inherit.aes = FALSE
   ) +
 
   # Total count on top of each bar
@@ -932,7 +940,8 @@ plot72 <- ggplot(
   ) +
   scale_y_continuous(
     labels = label_comma(),
-    expand = expansion(mult = c(0, 0.08))
+    breaks = seq(0, 1250, 250),
+    expand = expansion(add = c(50, 0), mult = c(0, 0.08))
   ) +
   labs(
     title    = "Work-life balance: attrition count breakdown",
@@ -984,6 +993,10 @@ plot73_data <- df_clean %>%
   ) %>%
   # Remove very sparse buckets (n < 5) — unreliable rates
   filter(total >= 5)
+
+cat("\n=== 7.3 Summary: Composite Culture Score vs Attrition Rate ===\n")
+print(plot73_data, n = Inf)
+cat("\n")
 
 plot73 <- ggplot(
   plot73_data,
@@ -1101,6 +1114,10 @@ plot74_data <- bind_rows(
     )),
     level = factor(level, levels = LEVELS_4PT)
   )
+
+cat("\n=== 7.4 Summary: Attrition Rate Heatmap Data ===\n")
+print(plot74_data, n = Inf)
+cat("\n")
 
 plot74 <- ggplot(
   plot74_data,
