@@ -712,3 +712,419 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 # =============================================================================
 # SECTION 7: ANALYSIS
 # =============================================================================
+
+
+
+
+
+
+
+
+
+
+
+# =============================================================================
+# OBJECTIVE 2: To investigate the impact of burnout and work-life pressure on employee attrition
+# NAME  : Chin Kai Jack TP076605
+# Variables: Attrition, OverTime, BusinessTravel, DistanceFromHome, MaritalStatus
+# =============================================================================
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
+
+message("[OK] All libraries loaded — ready to proceed.")
+
+OUTPUT_PARQUET <- "employee_attrition_cleaned.parquet"
+
+df_clean <- read_parquet(
+  OUTPUT_PARQUET,
+  col_select = c("attrition", "over_time", "business_travel",
+                 "distance_from_home", "marital_status")
+)
+cat("Obj 2 (Burnout) loaded:", nrow(df_clean), "rows x", ncol(df_clean), "cols\n")
+
+# --- Objective 2 Theme -------------------------------------------
+OBJ2_THEME <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(colour = "grey40", size = 11),
+    axis.title    = element_text(face = "bold"),
+    legend.position = "top"
+  )
+COLOR_NO  <- "#2196F3"   # blue = stayed
+COLOR_YES <- "#F44336"   # red  = left
+COLOR_BAR <- "#9C27B0"   # purple = bar charts
+
+
+# =============================================================================
+# ANALYSIS 2-1: Impact of Overtime on Attrition (Chi-Square + Cramér's V)
+# =============================================================================
+message("\n--- Analysis 2-1 Overtime x Attrition (Chi-Square) ---")
+
+# A. Contingency Table
+overtime_tbl <- table(df_clean$over_time, df_clean$attrition)
+cat("Contingency Table:\n")
+print(overtime_tbl)
+
+# B. Chi-Square Test
+overtime_chi <- chisq.test(overtime_tbl)
+cat("\nChi-Square Results:\n")
+print(overtime_chi)
+
+# C. Effect Size — Cramér's V
+# p-value = IF the association is real | Cramér's V = HOW STRONG it is
+# Interpretation: 0.10–0.29 = medium, 0.30+ = strong
+overtime_cramV <- sqrt(overtime_chi$statistic /
+                         (nrow(df_clean) * (min(dim(overtime_tbl)) - 1)))
+cat("Cramér's V =", round(overtime_cramV, 3), "\n")
+
+# D. Visualization — Proportional Stacked Bar with Percentage Labels
+p_obj2_1 <- df_clean %>%
+  count(over_time, attrition) %>%
+  group_by(over_time) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = over_time, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Burnout / Workload Intensity: Overtime & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(overtime_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(overtime_cramV, 3)),
+    x = "Working Overtime", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ2_THEME
+
+print(p_obj2_1)
+
+
+# =============================================================================
+# ANALYSIS 2-2: Dose-Response Relationship of Business Travel and Attrition
+# (Chi-Square + Cramér's V + Dose-Response)
+# =============================================================================
+message("\n--- Analysis 2-2 Business Travel x Attrition (Chi-Square) ---")
+
+# A. Contingency Table (as row percentages)
+travel_tbl <- table(df_clean$business_travel, df_clean$attrition)
+cat("Row Percentages (%):\n")
+print(round(prop.table(travel_tbl, margin = 1) * 100, 1))
+
+# B. Chi-Square Test
+travel_chi <- chisq.test(travel_tbl)
+cat("\nChi-Square Results:\n")
+print(travel_chi)
+
+# C. Effect Size — Cramér's V
+travel_cramV <- sqrt(travel_chi$statistic /
+                       (nrow(df_clean) * (min(dim(travel_tbl)) - 1)))
+cat("Cramér's V =", round(travel_cramV, 3), "\n")
+
+# D. Visualization — Proportional Stacked Bar Chart
+p_obj2_2 <- df_clean %>%
+  # Reorder factor to show dose-response gradient
+  mutate(business_travel = factor(business_travel, levels = c("No Travel", "Travel Rarely", "Travel Frequently"))) %>%
+  count(business_travel, attrition) %>%
+  group_by(business_travel) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = business_travel, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Professional Strain: Travel Frequency & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(travel_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(travel_cramV, 3),
+                      "\nDose-Response: does attrition increase with each travel level? The more X given, the more Y happens"),
+    x = "Travel Frequency (ordered)", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ2_THEME
+
+print(p_obj2_2)
+
+
+# =============================================================================
+# ANALYSIS 2-3: The Commute Penalty – Distance from Home vs. Attrition
+# (Kruskal-Wallis + Violin)
+# =============================================================================
+message("\n--- Analysis 2-3 Distance from Home x Attrition (Kruskal-Wallis) ---")
+
+# A. WHY Kruskal-Wallis? — Verify distance is NOT normally distributed
+hist(df_clean$distance_from_home, breaks = 20, col = COLOR_BAR,
+     main = "Distance from Home Distribution (Normality Check)",
+     xlab = "Distance (km)")
+# Observation: right-skewed distribution → t-test assumptions violated → use KW
+
+# B. Non-Parametric Test
+# distance_from_home split by (~) attrition
+dist_kw <- kruskal.test(distance_from_home ~ attrition, data = df_clean)
+cat("Kruskal-Wallis Results:\n")
+print(dist_kw)
+
+# C. Group Medians
+dist_summary <- df_clean %>%
+  group_by(attrition) %>%
+  summarise(
+    n           = n(),
+    median_dist = median(distance_from_home),
+    mean_dist   = round(mean(distance_from_home), 1),
+    .groups     = "drop"
+  )
+cat("\nDistance Summary by Attrition:\n")
+print(dist_summary)
+
+# D. Visualization — Violin + Boxplot with Median Annotation
+p_obj2_3 <- df_clean %>%
+  ggplot(aes(x = attrition, y = distance_from_home, fill = attrition)) +
+  geom_violin(width = 1, alpha = 0.5, colour = NA, show.legend = FALSE) +
+  geom_boxplot(width = 0.2, colour = "black", outlier.shape = NA, alpha = 0.8, show.legend = FALSE) +
+  # Annotate median values directly on the plot
+  geom_text(data = dist_summary,
+            aes(x = attrition, y = median_dist,
+                label = paste("Mdn =", median_dist)),
+            vjust = -1.2, fontface = "bold", size = 4) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "The Commute Penalty: Distance & Attrition",
+    subtitle = paste("Kruskal-Wallis p =", format.pval(dist_kw$p.value, digits = 3),
+                      "  |  Non-parametric (distance is right-skewed)"),
+    x = "Attrition", y = "Distance from Home (km)"
+  ) +
+  OBJ2_THEME
+
+print(p_obj2_3)
+
+
+# =============================================================================
+# ANALYSIS 2-4: The Social Buffer – Martial Status and Attrition (Chi-Square)
+# =============================================================================
+message("\n--- Analysis 2-4 Marital Status x Attrition (Chi-Square) ---")
+
+# A. Contingency Table
+marital_tbl <- table(df_clean$marital_status, df_clean$attrition)
+cat("Contingency Table:\n")
+print(marital_tbl)
+
+# B. Chi-Square Test for Marital Status
+marital_chi <- chisq.test(marital_tbl)
+cat("\nChi-Square Results:\n")
+print(marital_chi)
+
+# C. Effect Size — Cramér's V
+marital_cramV <- sqrt(marital_chi$statistic /
+                        (nrow(df_clean) * (min(dim(marital_tbl)) - 1)))
+cat("Cramér's V =", round(marital_cramV, 3), "\n")
+
+# D. Proportional Bar Chart
+p_obj2_4 <- df_clean %>%
+  count(marital_status, attrition) %>%
+  group_by(marital_status) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = marital_status, y = pct, fill = attrition)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f%%", pct)),
+            position = position_stack(vjust = 0.5),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_manual(values = c("No" = COLOR_NO, "Yes" = COLOR_YES)) +
+  labs(
+    title    = "Social Buffer: Marital Status & Attrition",
+    subtitle = paste("Chi-Square p =", format.pval(marital_chi$p.value, digits = 3),
+                      "  |  Cramér's V =", round(marital_cramV, 3)),
+    x = "Marital Status", y = "Proportion (%)", fill = "Attrition"
+  ) +
+  OBJ2_THEME
+
+print(p_obj2_4)
+
+
+# =============================================================================
+# ANALYSIS 2-5: Multi-Dimensional Risk Profiling (Interaction Heatmap)
+# (Combination of Marital Status × Overtime)
+# =============================================================================
+message("\n--- Analysis 2-5 Heatmap ---")
+
+# A. Interaction Heatmap — Marital Status × Overtime
+#    Which COMBINATION is most at risk?
+heatmap_data <- df_clean %>%
+  group_by(marital_status, over_time) %>%
+  summarise(
+    n        = n(),
+    attr_pct = mean(attrition == "Yes") * 100,
+    .groups  = "drop"
+  )
+
+cat("\nInteraction Table — Attrition Rate (%) by Marital Status x Overtime:\n")
+print(heatmap_data)
+
+p_obj2_5a <- heatmap_data %>%
+  ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
+  geom_tile(colour = "white", linewidth = 1.5) +
+  geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
+            colour = "white", fontface = "bold", size = 4.5) +
+  scale_fill_gradient(low = COLOR_NO, high = COLOR_YES,
+                      name = "Attrition %") +
+  labs(
+    title    = "Risk Heatmap: Marital Status x Overtime Interaction",
+    subtitle = "Single + Overtime = highest burnout vulnerability",
+    x = "Overtime Status", y = "Marital Status"
+  ) +
+  OBJ2_THEME +
+  theme(legend.position = "right")
+
+print(p_obj2_5a)
+
+
+# B. 3-way Interaction Heatmap — Marital Status × Overtime × Business Travel
+#    Three-Way Interaction to isolate the ultimate compounded turnover risk
+heatmap_data_3way <- df_clean %>%
+  group_by(marital_status, over_time, business_travel) %>% # 1. Added travel to grouping
+  summarise(
+    n        = n(),
+    attr_pct = mean(attrition == "Yes") * 100,
+    .groups  = "drop"
+  )
+
+cat("\n3-Way Interaction Table — Attrition Rate (%) with Travel:\n")
+print(heatmap_data_3way)
+
+p_obj2_5b <- heatmap_data_3way %>%
+  ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
+  geom_tile(colour = "white", linewidth = 1.5) +
+  geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
+            colour = "white", fontface = "bold", size = 3.5) + 
+  scale_fill_gradient(low = COLOR_NO, high = COLOR_YES,
+                      name = "Attrition %") +
+  
+  # Splits the heatmap into columns based on travel frequency
+  facet_wrap(~business_travel) + 
+  
+  labs(
+    title    = "Multi-Dimensional Risk Heatmap: Marital × Overtime × Travel",
+    subtitle = "Identifying how operational travel compounding intensifies demographic burnout vulnerabilities",
+    x = "Overtime Status", y = "Marital Status"
+  ) +
+  OBJ2_THEME +
+  theme(
+    legend.position = "right",
+    strip.text = element_text(face = "bold", size = 11) # Makes the facet headers stand out cleanly
+  )
+
+print(p_obj2_5b)
+
+
+# =============================================================================
+# ANALYSIS 2-6: Multivariate Diagnostic Model – Logistic Regression
+# (All 4 Burnout Factors Combined)
+# =============================================================================
+message("\n--- Analysis 2-6 Logistic Regression — Burnout Model ---")
+
+# A. Prepare binary response (glm requires numeric 0/1 for binomial family)
+df_logit <- df_clean %>%
+  mutate(attr_bin = ifelse(attrition == "Yes", 1, 0))
+
+# B. Fit Model - glm() + binomial() = logistic regression
+model_burnout <- glm(
+  attr_bin ~ over_time + business_travel + distance_from_home + marital_status,
+  data   = df_logit,
+  family = binomial()
+)
+
+cat("Model Summary:\n")
+print(summary(model_burnout))
+
+# C. Odds Ratios with 95% Confidence Intervals
+odds_df <- data.frame(
+  term      = names(coef(model_burnout)),
+  odds      = exp(coef(model_burnout)),
+  ci_low    = exp(confint.default(model_burnout)[, 1]),
+  ci_high   = exp(confint.default(model_burnout)[, 2])
+)
+odds_df <- odds_df[odds_df$term != "(Intercept)", ]   # drop intercept
+rownames(odds_df) <- NULL
+
+cat("\nOdds Ratios (95% CI):\n")
+print(odds_df)
+
+# D. Interpretation Guide
+cat("\n--- How to read Odds Ratios ---\n")
+cat("  OR > 1  → increases attrition risk   (e.g. 3.36 = 3.36× more likely)\n")
+cat("  OR < 1  → decreases attrition risk   (e.g. 0.60 = 40% less likely)\n")
+cat("  CI crossing 1.0 → NOT statistically significant\n")
+
+# E. Forest Plot — Visual Summary of Logistic Regression
+p_obj2_6 <- odds_df %>%
+  mutate(
+    # Clean labels for display
+    label = case_when(
+      term == "over_timeYes"                      ~ "Overtime (Yes)",
+      term == "business_travelTravel Rarely"      ~ "Travel Rarely",
+      term == "business_travelTravel Frequently"  ~ "Travel Frequently",
+      term == "distance_from_home"                ~ "Distance from Home",
+      term == "marital_statusMarried"             ~ "Married",
+      term == "marital_statusSingle"              ~ "Single",
+      TRUE                                        ~ term
+    ),
+    # Flag significance: CI does not cross 1.0
+    significant = ifelse(ci_low > 1 | ci_high < 1, "Significant", "Not Significant")
+  ) %>%
+  ggplot(aes(x = odds, y = reorder(label, odds), colour = significant)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_point(size = 3.5) +
+  geom_errorbarh(aes(xmin = ci_low, xmax = ci_high), height = 0.2, linewidth = 0.8) +
+  scale_colour_manual(values = c("Significant" = COLOR_YES,
+                                  "Not Significant" = "grey60")) +
+  labs(
+    title    = "Burnout Model: What Predicts Attrition?",
+    subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
+    x = "Odds Ratio", y = NULL, colour = "Significance"
+  ) +
+  OBJ2_THEME
+
+print(p_obj2_6)
+
+
+# =============================================================================
+# RESULTS SUMMARY TABLE — All Burnout Tests at a Glance
+# =============================================================================
+message("\n--- Burnout Analysis Summary ---")
+
+burnout_results <- data.frame(
+  Analysis  = c("Overtime x Attrition",
+                "Travel x Attrition",
+                "Distance x Attrition",
+                "Marital Status x Attrition"),
+  Test      = c("Chi-Square", "Chi-Square", "Kruskal-Wallis", "Chi-Square"),
+  Statistic = c(round(overtime_chi$statistic, 2),
+                round(travel_chi$statistic, 2),
+                round(dist_kw$statistic, 2),
+                round(marital_chi$statistic, 2)),
+  p_value   = c(format.pval(overtime_chi$p.value, digits = 3),
+                format.pval(travel_chi$p.value, digits = 3),
+                format.pval(dist_kw$p.value, digits = 3),
+                format.pval(marital_chi$p.value, digits = 3)),
+  Effect    = c(paste("V =", round(overtime_cramV, 3)),
+                paste("V =", round(travel_cramV, 3)),
+                "—",
+                paste("V =", round(marital_cramV, 3))),
+  Verdict   = c(
+    ifelse(overtime_chi$p.value < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(travel_chi$p.value  < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(dist_kw$p.value     < 0.05, "Reject H0", "Fail to Reject H0"),
+    ifelse(marital_chi$p.value < 0.05, "Reject H0", "Fail to Reject H0")
+  ),
+  stringsAsFactors = FALSE
+)
+
+print(burnout_results)
+
+message("\n[OK] Section 7 — Objective 2 (Burnout & Work-Life Pressure) complete.")
+
+
+
+
+
