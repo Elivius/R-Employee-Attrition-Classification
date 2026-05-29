@@ -738,23 +738,37 @@ message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 #   Tier 2 — Diagnostic   : Chi-Square, Cramér's V, Kruskal-Wallis
 #   Tier 3 — Predictive   : Multivariate Logistic Regression
 # =============================================================================
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, scales, gridExtra, janitor, arrow, caret, corrplot)
 
+message("[OK] All libraries loaded — ready to proceed.")
+
+OUTPUT_PARQUET <- "employee_attrition_cleaned.parquet"
+
+df_clean <- read_parquet(
+  OUTPUT_PARQUET,
+  col_select = c("attrition", "over_time", "business_travel",
+                 "distance_from_home", "marital_status")
+)
+cat("Obj 2 (Burnout) loaded:", nrow(df_clean), "rows x", ncol(df_clean), "cols\n")
 
 # --- 7.0 Define Objective 2 Theme -------------------------------------------
 # Reusable theme for all Burnout section plots — keeps formatting consistent
-OBJ1_THEME <- theme_minimal(base_size = 13) +
+OBJ2_THEME <- theme_minimal(base_size = 13) +
   theme(
     plot.title    = element_text(face = "bold", size = 15),
     plot.subtitle = element_text(colour = "grey40", size = 11),
     axis.title    = element_text(face = "bold"),
     legend.position = "top"
   )
+COLOR_NO  <- "#2196F3"   # blue = stayed
+COLOR_YES <- "#F44336"   # red  = left
 
 
 # =============================================================================
-# 7.1 ANALYSIS 2-1: OVERTIME x ATTRITION  (Chi-Square + Cramér's V)
+# ANALYSIS 2-1: OVERTIME x ATTRITION  (Chi-Square + Cramér's V)
 # =============================================================================
-message("\n--- 7.1 Overtime x Attrition (Chi-Square) ---")
+message("\n--- Analysis 2-1 Overtime x Attrition (Chi-Square) ---")
 
 # A. Contingency Table
 overtime_tbl <- table(df_clean$over_time, df_clean$attrition)
@@ -791,15 +805,15 @@ p_obj2_1 <- df_clean %>%
                       "  |  Cramér's V =", round(overtime_cramV, 3)),
     x = "Working Overtime", y = "Proportion (%)", fill = "Attrition"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
 print(p_obj2_1)
 
 
 # =============================================================================
-# 7.2 ANALYSIS 2-2: BUSINESS TRAVEL x ATTRITION  (Chi-Square + Cramér's V + Dose-Response)
+# ANALYSIS 2-2: BUSINESS TRAVEL x ATTRITION  (Chi-Square + Cramér's V + Dose-Response)
 # =============================================================================
-message("\n--- 7.2 Business Travel x Attrition (Chi-Square) ---")
+message("\n--- Analysis 2-2 Business Travel x Attrition (Chi-Square) ---")
 
 # A. Contingency Table (as row percentages)
 travel_tbl <- table(df_clean$business_travel, df_clean$attrition)
@@ -816,7 +830,7 @@ travel_cramV <- sqrt(travel_chi$statistic /
                        (nrow(df_clean) * (min(dim(travel_tbl)) - 1)))
 cat("Cramér's V =", round(travel_cramV, 3), "\n")
 
-# D. Visualization — Dose-Response Gradient Bar Chart
+# D. Visualization — Proportional Stacked Bar Chart
 p_obj2_2 <- df_clean %>%
   # Reorder factor to show dose-response gradient
   mutate(business_travel = factor(business_travel, levels = c("No Travel", "Travel Rarely", "Travel Frequently"))) %>%
@@ -837,15 +851,15 @@ p_obj2_2 <- df_clean %>%
                       "\nDose-Response: does attrition increase with each travel level? The more X given, the more Y happens"),
     x = "Travel Frequency (ordered)", y = "Proportion (%)", fill = "Attrition"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
 print(p_obj2_2)
 
 
 # =============================================================================
-# 7.3 ANALYSIS 2-3: DISTANCE FROM HOME × ATTRITION  (Kruskal-Wallis + Violin)
+# ANALYSIS 2-3: DISTANCE FROM HOME × ATTRITION  (Kruskal-Wallis + Violin)
 # =============================================================================
-message("\n--- 7.3 Distance from Home × Attrition (Kruskal-Wallis) ---")
+message("\n--- Analysis 2-3 Distance from Home × Attrition (Kruskal-Wallis) ---")
 
 # A. WHY Kruskal-Wallis? — Verify distance is NOT normally distributed
 hist(df_clean$distance_from_home, breaks = 20, col = COLOR_BAR,
@@ -888,15 +902,15 @@ p_obj2_3 <- df_clean %>%
                       "  |  Non-parametric (distance is right-skewed)"),
     x = "Attrition", y = "Distance from Home (km)"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
 print(p_obj2_3)
 
 
 # =============================================================================
-# 7.4 ANALYSIS 2-4: MARITAL STATUS x ATTRITION  (Chi-Square)
+# ANALYSIS 2-4: MARITAL STATUS x ATTRITION  (Chi-Square)
 # =============================================================================
-message("\n--- 7.4 Marital Status x Attrition (Chi-Square) ---")
+message("\n--- Analysis 2-4 Marital Status x Attrition (Chi-Square) ---")
 
 # A. Contingency Table
 marital_tbl <- table(df_clean$marital_status, df_clean$attrition)
@@ -931,14 +945,15 @@ p_obj2_4 <- df_clean %>%
                       "  |  Cramér's V =", round(marital_cramV, 3)),
     x = "Marital Status", y = "Proportion (%)", fill = "Attrition"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
 print(p_obj2_4)
 
 
 # =============================================================================
-# 7.5 ANALYSIS 2-5: Heatmap
+# ANALYSIS 2-5: Heatmap (Combination of Marital Status × Overtime)
 # =============================================================================
+message("\n--- Analysis 2-5 Heatmap ---")
 
 # A. Interaction Heatmap — Marital Status × Overtime
 #    Which COMBINATION is most at risk?
@@ -965,7 +980,7 @@ p_obj2_5 <- heatmap_data %>%
     subtitle = "Single + Overtime = highest burnout vulnerability",
     x = "Overtime Status", y = "Marital Status"
   ) +
-  OBJ1_THEME +
+  OBJ2_THEME +
   theme(legend.position = "right")
 
 print(p_obj2_5)
@@ -1004,7 +1019,7 @@ p_obj2_6 <- heatmap_data_3way %>%
     subtitle = "Identifying how operational travel compounding intensifies demographic burnout vulnerabilities",
     x = "Overtime Status", y = "Marital Status"
   ) +
-  OBJ1_THEME +
+  OBJ2_THEME +
   theme(
     legend.position = "right",
     strip.text = element_text(face = "bold", size = 11) # Makes the facet headers stand out cleanly
