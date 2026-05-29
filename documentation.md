@@ -216,7 +216,7 @@ Reading from the Forest Plot (`burnout model - what predicts attrition.png`):
 
 > **Note:** Replace with exact OR values from your R output before submission.
 
-**Key Insight:** Distance from Home, which did not reach significance in the standalone Kruskal-Wallis test (Analysis 2-3, p = 0.0893), *does* emerge as a significant predictor here. This confirms that distance operates as a genuine compounding factor that the univariate test was underpowered to detect in isolation — validating H3's directional hypothesis even though the univariate test failed.
+**Key Insight:** All in all, this logistic regression model proves that the previous **Prescriptive Application** (from Analysis 2-5) is sound. By confirming that Overtime, Single status, and Frequent Travel all act as significant, independent drivers of attrition, the model statistically validates our recommendation to target that specific high-risk profile for proactive HR interventions.
 
 **Priority ranking of independent risk factors: Overtime → Single Status → Travel Frequently → Distance from Home.**
 
