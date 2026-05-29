@@ -987,7 +987,6 @@ p_obj2_5 <- heatmap_data %>%
 print(p_obj2_5)
 
 
-
 # B. 3-way Interaction Heatmap — Marital Status × Overtime × Business Travel
 #    Three-Way Interaction to isolate the ultimate compounded turnover risk
 heatmap_data_3way <- df_clean %>%
@@ -1004,11 +1003,8 @@ print(heatmap_data_3way)
 p_obj2_6 <- heatmap_data_3way %>%
   ggplot(aes(x = over_time, y = marital_status, fill = attr_pct)) +
   geom_tile(colour = "white", linewidth = 1.5) +
-  
-  # Reduced size slightly to 3.5 so text fits comfortably inside smaller facet boxes
   geom_text(aes(label = paste0(round(attr_pct, 1), " %\n(n = ", n, ")")),
             colour = "white", fontface = "bold", size = 3.5) + 
-  
   scale_fill_gradient(low = COLOR_NO, high = COLOR_YES,
                       name = "Attrition %") +
   
@@ -1030,9 +1026,9 @@ print(p_obj2_6)
 
 
 # =============================================================================
-# 7.5 EXTRA FEATURE: LOGISTIC REGRESSION (All 4 Burnout Factors Combined)
+# ANALYSIS 2-6: LOGISTIC REGRESSION (All 4 Burnout Factors Combined)
 # =============================================================================
-message("\n--- 7.5 Logistic Regression — Burnout Model ---")
+message("\n--- Analysis 2-6 Logistic Regression — Burnout Model ---")
 
 # A. Prepare binary response (glm requires numeric 0/1 for binomial family)
 df_logit <- df_clean %>%
@@ -1094,7 +1090,7 @@ p_obj2_7 <- odds_df %>%
     subtitle = "Logistic Regression Odds Ratios with 95% CI  |  Dashed line = no effect (OR = 1)",
     x = "Odds Ratio", y = NULL, colour = "Significance"
   ) +
-  OBJ1_THEME
+  OBJ2_THEME
 
 print(p_obj2_7)
 
@@ -1133,7 +1129,7 @@ burnout_results <- data.frame(
 
 print(burnout_results)
 
-message("\n[OK] Section 7 — Objective 1 (Burnout & Work-Life Pressure) complete.")
+message("\n[OK] Section 7 — Objective 2 (Burnout & Work-Life Pressure) complete.")
 
 
 
@@ -1141,10 +1137,10 @@ message("\n[OK] Section 7 — Objective 1 (Burnout & Work-Life Pressure) complet
 # 8.0 LOGISTIC REGRESSION MODEL FOR ATTRITION
 # =============================================================================
 
-message("\n--- 7.5 Logistic Regression — Burnout Model ---")
+message("\n--- 8.0 Logistic Regression ---")
 
-# A. Prepare binary response, drop attrition, and set baseline anchors to IDEAL states
-df_logit <- df_clean %>%
+# A. Read ALL columns from parquet for full-variable model
+df_logit <- read_parquet(OUTPUT_PARQUET) %>%
   mutate(attr_bin = ifelse(attrition == "Yes", 1, 0)) %>%
   select(-attrition) %>%
   
