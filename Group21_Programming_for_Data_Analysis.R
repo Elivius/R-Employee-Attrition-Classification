@@ -710,6 +710,5 @@ message("[OK] Clean data saved as CSV and Optimized Parquet.")
 message("\n>>> BASE SCRIPT COMPLETE — df_clean is ready for analysis.")
 
 # =============================================================================
-# SECTION 7 ONWARDS: YOUR GROUP'S ANALYSIS GOES HERE
-# Each group member writes their assigned objective below this line
+# SECTION 7: ANALYSIS
 # =============================================================================
